@@ -1,12 +1,18 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <meta http-equiv="refresh" content="0; url=/MJ_not_found/" />
-    <script>
-      // This ensures even JS-based redirects work in some browsers
+    <meta charset="UTF-8" />
+    <title>Redirecting...</title>
+    <script type="text/javascript">
       const repo = "/MJ_not_found/";
-      const redirect = window.location.origin + repo;
-      window.location.replace(redirect);
+
+      // get the path after the repo name
+      const path = window.location.pathname.replace(repo, "");
+
+      // only redirect if not trying to access a file (like .pdf, .png, .jpg, etc.)
+      if (!path.match(/\.[a-zA-Z0-9]+$/)) {
+        window.location.replace(repo);
+      }
     </script>
   </head>
   <body>
