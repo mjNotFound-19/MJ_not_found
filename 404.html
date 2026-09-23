@@ -4,14 +4,12 @@
     <meta charset="UTF-8" />
     <title>Redirecting...</title>
     <script type="text/javascript">
-      const repo = "/MJ_not_found/";
-
-      // get the path after the repo name
-      const path = window.location.pathname.replace(repo, "");
+      // Site is served from the root of manasjha.online.
+      const path = window.location.pathname;
 
       // only redirect if not trying to access a file (like .pdf, .png, .jpg, etc.)
-      if (!path.match(/\.[a-zA-Z0-9]+$/)) {
-        window.location.replace(repo);
+      if (path !== "/" && !path.match(/\.[a-zA-Z0-9]+$/)) {
+        window.location.replace("/");
       }
     </script>
   </head>
