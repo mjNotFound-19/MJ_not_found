@@ -50,7 +50,9 @@ export default function MatrixRain({
     let rafId = 0;
     let lastTime = performance.now();
     let revealBlend = revealTargetRef.current;
-    let boost = 0; // scroll-driven speed boost, decays back to 0
+    let boost = 0; // scroll-driven speed boost
+    let boostTarget = 0;
+    let pointerStrength = 0;
     let lastScrollY = window.scrollY;
     const pointer = { x: -9999, y: -9999, active: false };
     let scanY = -200;
@@ -58,17 +60,19 @@ export default function MatrixRain({
 
     const makeDrop = (layer, x, initial) => {
       const trailLength = Math.round(layer.trail * (0.6 + Math.random() * 0.8));
+      const y = initial ? Math.random() * height : -Math.random() * height * 0.6;
       return {
         x,
-        y: initial ? Math.random() * height : -Math.random() * height * 0.6,
+        y,
         speed: layer.speed * (0.65 + Math.random() * 0.7),
         glyphs: Array.from({ length: trailLength }, randomGlyph),
-        lastRow: 0,
+        lastRow: Math.floor(y / layer.size),
       };
     };
 
     const build = () => {
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      // It's a backdrop: 1.5x is visually identical to 2x and ~45% fewer pixels to fill.
+      const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
       width = window.innerWidth;
       height = window.innerHeight;
       canvas.width = Math.floor(width * dpr);
@@ -124,20 +128,29 @@ export default function MatrixRain({
     const onScroll = () => {
       const delta = Math.abs(window.scrollY - lastScrollY);
       lastScrollY = window.scrollY;
-      boost = Math.min(2.2, boost + delta / 260);
+      boostTarget = Math.min(2.2, boostTarget + delta / 300);
     };
+
+    // Frame-rate independent exponential approach: same feel at 60Hz and 144Hz.
+    const approach = (current, target, ratePerSecond, dt) =>
+      target + (current - target) * Math.exp(-ratePerSecond * dt);
 
     const draw = (now) => {
       const dt = Math.min(0.05, (now - lastTime) / 1000);
       lastTime = now;
-      boost *= 0.94;
-      revealBlend += (revealTargetRef.current - revealBlend) * 0.06;
+      // Scroll bursts ease in and out of the speed boost instead of jolting it.
+      boostTarget = approach(boostTarget, 0, 2.5, dt);
+      boost = approach(boost, boostTarget, 8, dt);
+      revealBlend = approach(revealBlend, revealTargetRef.current, 4, dt);
+      pointerStrength = approach(pointerStrength, pointer.active ? 1 : 0, 6, dt);
 
       ctx.fillStyle = background;
       ctx.fillRect(0, 0, width, height);
       ctx.textBaseline = "top";
 
-      const lensRadius = 160;
+      const lensRadius = 150;
+      const lensOn = pointerStrength > 0.01;
+      const mutateChance = 2.4 * dt; // ~2.4 glyph swaps per drop per second
 
       layers.forEach((layer, layerIndex) => {
         ctx.font = layer.font;
@@ -148,55 +161,65 @@ export default function MatrixRain({
           drop.y += drop.speed * (1 + boost) * dt;
           const headRow = Math.floor(drop.y / cell);
 
-          // Each time the head enters a new row, shift the trail and pick a new head glyph.
+          // When the head crosses into a new row it leaves its glyph behind in the grid.
           if (headRow !== drop.lastRow) {
+            const steps = Math.min(headRow - drop.lastRow, drop.glyphs.length);
+            for (let s = 0; s < steps; s++) {
+              drop.glyphs.pop();
+              drop.glyphs.unshift(randomGlyph());
+            }
             drop.lastRow = headRow;
-            drop.glyphs.pop();
-            drop.glyphs.unshift(randomGlyph());
           }
-          // Occasionally mutate a glyph mid-trail for that shimmering look.
-          if (Math.random() < 0.04) {
-            drop.glyphs[Math.floor(Math.random() * drop.glyphs.length)] = randomGlyph();
+          if (Math.random() < mutateChance) {
+            drop.glyphs[1 + Math.floor(Math.random() * (drop.glyphs.length - 1))] = randomGlyph();
           }
 
           const trailLength = drop.glyphs.length;
-          for (let i = 0; i < trailLength; i++) {
+          // Trail glyphs sit still in their grid cells (like the film); only their
+          // brightness moves, computed from the head's continuous position so the
+          // fade glides instead of stepping one row at a time.
+          for (let i = 1; i < trailLength; i++) {
+            // Glyph 1 lands on (headRow - 1): exactly where the head was when it crossed.
             const y = (headRow - i) * cell;
             if (y < -cell || y > height) continue;
 
-            const fade = 1 - i / trailLength;
+            const distance = (drop.y - y) / cell; // continuous rows behind the head
+            const fade = Math.max(0, 1 - distance / trailLength);
             let alpha = layer.alpha * fade * fade;
+            if (alpha < 0.01) continue;
 
-            // Pointer lens: glyphs near the cursor light up.
             let lens = 0;
-            if (pointer.active) {
+            if (lensOn) {
               const dx = drop.x - pointer.x;
               const dy = y - pointer.y;
-              const dist = Math.sqrt(dx * dx + dy * dy);
-              if (dist < lensRadius) lens = 1 - dist / lensRadius;
+              const d2 = dx * dx + dy * dy;
+              if (d2 < lensRadius * lensRadius) lens = (1 - Math.sqrt(d2) / lensRadius) * pointerStrength;
             }
-            alpha = Math.min(1, alpha + lens * 0.6 * fade);
+            // Kept subtle so text under the cursor stays readable.
+            alpha = Math.min(1, alpha + lens * 0.3 * fade);
 
-            // Scanline sweep brightens whatever it passes.
             const scanDist = Math.abs(y - scanY);
-            if (scanDist < 40) alpha = Math.min(1, alpha + (1 - scanDist / 40) * 0.35 * fade);
+            if (scanDist < 40) alpha = Math.min(1, alpha + (1 - scanDist / 40) * 0.3 * fade);
 
-            if (i === 0) {
-              // White-hot head with a glow.
+            const mix = lens * 0.35;
+            const cr = Math.round(r + (255 - r) * mix);
+            const cg = Math.round(g + (255 - g) * mix);
+            const cb = Math.round(b + (255 - b) * mix);
+            ctx.fillStyle = `rgba(${cr},${cg},${cb},${alpha.toFixed(3)})`;
+            ctx.fillText(drop.glyphs[i], drop.x, y);
+          }
+
+          // The head glides continuously between rows. It sits exactly on the cell
+          // where its glyph lands, so the hand-off into the trail is seamless.
+          const headY = drop.y - cell;
+          if (headY > -cell && headY < height) {
+            if (isNear) {
               ctx.shadowColor = `rgb(${r},${g},${b})`;
-              ctx.shadowBlur = isNear ? 14 : 8;
-              ctx.fillStyle = `rgba(235,250,255,${Math.min(1, layer.alpha + 0.15 + lens * 0.3)})`;
-              ctx.fillText(drop.glyphs[0], drop.x, y);
-              ctx.shadowBlur = 0;
-            } else {
-              // Blend toward white near the cursor.
-              const mix = lens * 0.7;
-              const cr = Math.round(r + (255 - r) * mix);
-              const cg = Math.round(g + (255 - g) * mix);
-              const cb = Math.round(b + (255 - b) * mix);
-              ctx.fillStyle = `rgba(${cr},${cg},${cb},${alpha})`;
-              ctx.fillText(drop.glyphs[i], drop.x, y);
+              ctx.shadowBlur = 12;
             }
+            ctx.fillStyle = `rgba(235,250,255,${Math.min(1, layer.alpha + 0.1).toFixed(3)})`;
+            ctx.fillText(drop.glyphs[0], drop.x, headY);
+            if (isNear) ctx.shadowBlur = 0;
           }
 
           if ((headRow - trailLength) * cell > height) {
@@ -209,10 +232,9 @@ export default function MatrixRain({
           secretSlots.forEach((slot) => {
             const passing = layer.drops.some((drop) => {
               if (drop.x !== slot.x) return false;
-              const headY = Math.floor(drop.y / cell) * cell;
-              return slot.y <= headY && slot.y >= headY - drop.glyphs.length * cell;
+              return slot.y <= drop.y && slot.y >= drop.y - drop.glyphs.length * cell;
             });
-            slot.lit = passing ? 1 : slot.lit * 0.985;
+            slot.lit = passing ? 1 : approach(slot.lit, 0, 0.9, dt);
             const alpha = revealBlend * (0.35 + slot.lit * 0.65);
             ctx.fillStyle = background;
             ctx.fillRect(slot.x, slot.y, cell, cell);
@@ -250,7 +272,9 @@ export default function MatrixRain({
     rafId = requestAnimationFrame(draw);
     window.addEventListener("resize", onResize);
     window.addEventListener("pointermove", onPointerMove, { passive: true });
-    document.addEventListener("pointerleave", onPointerLeave);
+    // pointerleave never fires on `document`; the root element's mouseleave does.
+    document.documentElement.addEventListener("mouseleave", onPointerLeave);
+    window.addEventListener("blur", onPointerLeave);
     window.addEventListener("scroll", onScroll, { passive: true });
     document.addEventListener("visibilitychange", onVisibility);
 
@@ -258,7 +282,8 @@ export default function MatrixRain({
       cancelAnimationFrame(rafId);
       window.removeEventListener("resize", onResize);
       window.removeEventListener("pointermove", onPointerMove);
-      document.removeEventListener("pointerleave", onPointerLeave);
+      document.documentElement.removeEventListener("mouseleave", onPointerLeave);
+      window.removeEventListener("blur", onPointerLeave);
       window.removeEventListener("scroll", onScroll);
       document.removeEventListener("visibilitychange", onVisibility);
     };

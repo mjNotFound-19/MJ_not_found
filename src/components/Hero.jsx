@@ -7,13 +7,8 @@ import { fadeUp, staggerChildren } from "../lib/motion";
 import DecodeText from "./motion/DecodeText";
 import Typewriter from "./motion/Typewriter";
 import { useLanguage } from "../context/LanguageContext";
-
-const scrollToId = (id) => {
-  const target = document.getElementById(id);
-  if (!target) return;
-  const top = target.getBoundingClientRect().top + window.scrollY - 88;
-  window.scrollTo({ top, behavior: "smooth" });
-};
+import { scrollToId } from "../lib/scroll";
+import RollText from "./motion/RollText";
 
 export default function Hero() {
   const { t } = useLanguage();
@@ -24,6 +19,12 @@ export default function Hero() {
   });
   const panelShift = useTransform(scrollYProgress, [0, 1], [0, -60]);
   const glowShift = useTransform(scrollYProgress, [0, 1], [0, -160]);
+  // As the next section slides over, the hero recedes: scale down, dim, drift up.
+  const heroScale = useTransform(scrollYProgress, [0.3, 1], [1, 0.92]);
+  // Only fade once the content has mostly left the screen; fading earlier dims
+  // the stats and buttons while people are still reading them.
+  const heroOpacity = useTransform(scrollYProgress, [0.6, 0.95], [1, 0]);
+  const heroY = useTransform(scrollYProgress, [0, 1], [0, 120]);
   const { ref: primaryCta, magneticStyle: primaryStyle } = useMagnetic(0.25);
   const { ref: secondaryCta, magneticStyle: secondaryStyle } = useMagnetic(0.18);
 
@@ -32,13 +33,16 @@ export default function Hero() {
       <div className="hero-grid-lines" aria-hidden />
       <motion.div
         style={{ y: glowShift }}
-        className="absolute -left-40 top-10 w-[50vw] h-[50vw] rounded-full bg-primary/15 blur-[180px] pointer-events-none"
+        className="hero-glow absolute -left-40 top-10 w-[60vw] h-[60vw] pointer-events-none"
         aria-hidden
       />
 
-      <div className="section-shell relative z-10 pt-32 pb-20">
+      <motion.div
+        className="section-shell relative z-10 pt-32 pb-20 origin-top"
+        style={{ scale: heroScale, opacity: heroOpacity, y: heroY }}
+      >
         <div className="grid gap-12 lg:grid-cols-[minmax(0,1fr)_400px] items-center">
-          <div>
+          <div className="on-rain">
             <motion.span
               className="mono-chip"
               initial="hidden"
@@ -73,7 +77,7 @@ export default function Hero() {
             </motion.p>
 
             <motion.p
-              className="mt-6 text-lg text-white/70 max-w-2xl leading-relaxed"
+              className="mt-6 text-lg text-white/80 max-w-2xl leading-relaxed"
               initial="hidden"
               animate="show"
               variants={fadeUp(0.25, 16)}
@@ -82,7 +86,7 @@ export default function Hero() {
             </motion.p>
 
             <motion.p
-              className="mt-5 inline-flex items-center gap-2 text-sm text-white/55"
+              className="mt-5 inline-flex items-center gap-2 text-sm text-white/65"
               initial="hidden"
               animate="show"
               variants={fadeUp(0.3, 12)}
@@ -106,11 +110,10 @@ export default function Hero() {
                   scrollToId("projects");
                 }}
                 className="btn-primary magnetic-target"
-                whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
               >
                 <span className="magnetic-shadow" />
-                {t.hero.ctas.projects}
+                <RollText>{t.hero.ctas.projects}</RollText>
                 <ArrowRight size={16} aria-hidden />
               </motion.a>
               <motion.a
@@ -122,10 +125,9 @@ export default function Hero() {
                   scrollToId("contact");
                 }}
                 className="btn-ghost"
-                whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
               >
-                {t.hero.ctas.contact}
+                <RollText>{t.hero.ctas.contact}</RollText>
               </motion.a>
             </motion.div>
           </div>
@@ -216,7 +218,7 @@ export default function Hero() {
             );
           })}
         </motion.div>
-      </div>
+      </motion.div>
     </section>
   );
 }

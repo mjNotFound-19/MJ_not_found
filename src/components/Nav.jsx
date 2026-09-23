@@ -5,11 +5,13 @@ import useMagnetic from "../hooks/useMagnetic";
 import { fadeUp } from "../lib/motion";
 import { CONTACT } from "../config/content";
 import { useLanguage } from "../context/LanguageContext";
+import RollText from "./motion/RollText";
 
 export default function Nav() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [active, setActive] = useState("");
+  const [hidden, setHidden] = useState(false);
   const { ref: ctaRef, magneticStyle } = useMagnetic(0.2);
   const { t } = useLanguage();
 
@@ -22,9 +24,15 @@ export default function Nav() {
   ];
 
   useEffect(() => {
+    let lastY = window.scrollY;
     const handleScroll = () => {
-      setScrolled(window.scrollY > 24);
-      if (window.scrollY < window.innerHeight * 0.5) setActive("");
+      const y = window.scrollY;
+      setScrolled(y > 24);
+      // Tuck the nav away while reading downward, bring it back on any upward scroll.
+      if (Math.abs(y - lastY) > 6) {
+        setHidden(y > lastY && y > window.innerHeight * 0.6);
+        lastY = y;
+      }
     };
     handleScroll();
     window.addEventListener("scroll", handleScroll, { passive: true });
@@ -32,15 +40,20 @@ export default function Nav() {
   }, []);
 
   // Highlight whichever section is crossing the upper-middle of the viewport.
+  // Sections can nest (experience lives inside about), so track every section in
+  // the band and pick the last one in page order, the most specific.
   useEffect(() => {
-    const sections = ["about", "experience", "projects", "skills", "contact"]
-      .map((id) => document.getElementById(id))
-      .filter(Boolean);
+    const order = ["about", "experience", "projects", "skills", "contact"];
+    const sections = order.map((id) => document.getElementById(id)).filter(Boolean);
+    const visible = new Set();
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
-          if (entry.isIntersecting) setActive(entry.target.id);
+          if (entry.isIntersecting) visible.add(entry.target.id);
+          else visible.delete(entry.target.id);
         });
+        const current = [...order].reverse().find((id) => visible.has(id));
+        setActive(current ?? "");
       },
       { rootMargin: "-35% 0px -60% 0px" }
     );
@@ -57,8 +70,8 @@ export default function Nav() {
 
   return (
     <header
-      className={`fixed top-0 inset-x-0 z-50 transition-[background,backdrop-filter,border-color] duration-500 ${
-        scrolled ? "nav-blur" : "nav-clear"
+      className={`site-nav fixed top-0 inset-x-0 z-50 ${scrolled ? "nav-blur" : "nav-clear"} ${
+        hidden && !menuOpen ? "is-hidden" : ""
       }`}
     >
       <div className="section-shell">
@@ -92,9 +105,19 @@ export default function Nav() {
                   initial="hidden"
                   animate="show"
                 >
-                  {link.label}
+                  <RollText>{link.label}</RollText>
                 </motion.a>
               ))}
+              <motion.a
+                href="/bucket-list/"
+                data-transition="bucket"
+                className="nav-link nav-link-special"
+                variants={fadeUp(0.3, 18)}
+                initial="hidden"
+                animate="show"
+              >
+                <RollText>{t.nav.bucket}</RollText>
+              </motion.a>
             </nav>
 
             <motion.a
@@ -107,7 +130,7 @@ export default function Nav() {
               animate="show"
             >
               <span className="magnetic-shadow" />
-              <span>{t.nav.connect}</span>
+              <RollText>{t.nav.connect}</RollText>
               <ArrowUpRight size={15} aria-hidden />
             </motion.a>
 
@@ -148,6 +171,10 @@ export default function Nav() {
                   {link.label}
                 </a>
               ))}
+              <a href="/bucket-list/" data-transition="bucket" className="flex items-baseline gap-3 py-2 text-lg font-medium text-gray-100">
+                <span className="font-mono text-xs text-primary">06</span>
+                {t.nav.bucket}
+              </a>
               <a
                 href={`mailto:${CONTACT.email}`}
                 className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-primary/10 text-primary border border-primary/40"

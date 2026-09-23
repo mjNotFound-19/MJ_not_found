@@ -2,11 +2,22 @@ import { motion } from "framer-motion";
 import RevealText from "./motion/RevealText";
 import { fadeUp } from "../lib/motion";
 
-export default function Section({ id, index, eyebrow, title, subtitle, children }) {
+// `fullBleed` renders children outside the centered shell (for pinned, edge-to-edge tracks).
+// `stickyHeader` pins the heading in a left column while the content scrolls past on the right.
+export default function Section({
+  id,
+  index,
+  eyebrow,
+  title,
+  subtitle,
+  fullBleed = false,
+  stickyHeader = false,
+  children,
+}) {
   return (
-    <section id={id} className="relative py-24 sm:py-28">
-      <div className="section-shell">
-        <div className="max-w-3xl space-y-4">
+    <section id={id} className="relative py-24 sm:py-32">
+      <div className={`section-shell ${stickyHeader ? "sticky-header-grid" : ""}`}>
+        <div className={`on-rain ${stickyHeader ? "sticky-header space-y-5" : "max-w-4xl space-y-5"}`}>
           {eyebrow && (
             <motion.p
               className="section-eyebrow"
@@ -24,7 +35,7 @@ export default function Section({ id, index, eyebrow, title, subtitle, children 
             <RevealText
               as="h2"
               lines={[title]}
-              className="text-[clamp(2.4rem,4vw,3.5rem)] leading-tight font-semibold"
+              className="section-title"
             />
           )}
           {subtitle && (
@@ -32,12 +43,13 @@ export default function Section({ id, index, eyebrow, title, subtitle, children 
               as="p"
               text={subtitle}
               delay={0.15}
-              className="text-lg text-white/70"
+              className="text-lg text-white/75 max-w-2xl"
             />
           )}
         </div>
-        <div className="mt-14">{children}</div>
+        {!fullBleed && <div className={stickyHeader ? "" : "mt-14"}>{children}</div>}
       </div>
+      {fullBleed && <div className="mt-10">{children}</div>}
     </section>
   );
 }

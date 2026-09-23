@@ -4,6 +4,7 @@ import CinematicImage from "./motion/CinematicImage";
 import { fadeUp, staggerChildren } from "../lib/motion";
 import useMagnetic from "../hooks/useMagnetic";
 import { useLanguage } from "../context/LanguageContext";
+import RollText from "./motion/RollText";
 
 export default function Projects() {
   const { t } = useLanguage();
@@ -16,7 +17,8 @@ export default function Projects() {
   );
 }
 
-function ProjectCard({ project, index, cardT }) {
+// `compact` tightens spacing so a card fits inside the pinned horizontal viewport.
+export function ProjectCard({ project, index, cardT, compact = false }) {
   const { ref, magneticStyle } = useMagnetic(0.25);
   const { t } = useLanguage();
   const trans = t.projects?.[project.id];
@@ -35,7 +37,9 @@ function ProjectCard({ project, index, cardT }) {
   const hasMetrics = mediaEnabled && Array.isArray(project.metrics) && project.metrics.length > 0;
   const hasMediaPanel = hasPoster || hasMetrics;
   const layoutClasses = [
-    "relative rounded-[31px] bg-black/70 backdrop-blur-3xl p-6 sm:p-10 lg:p-12 grid gap-10",
+    compact
+      ? "relative rounded-[31px] bg-[rgba(2,4,14,0.93)] p-8 xl:p-10 grid gap-8"
+      : "relative rounded-[31px] bg-[rgba(2,4,14,0.93)] p-6 sm:p-10 lg:p-12 grid gap-10",
     hasMediaPanel ? "lg:grid-cols-[minmax(0,1.2fr)_0.8fr]" : "",
   ]
     .join(" ")
@@ -54,15 +58,15 @@ function ProjectCard({ project, index, cardT }) {
       transition={{ duration: 0.8, delay: index * 0.05 }}
     >
       <div className={layoutClasses}>
-        <div className="space-y-6">
+        <div className={compact ? "space-y-4" : "space-y-6"}>
           <div className="flex flex-wrap items-center gap-3">
-            <span className="font-mono text-xs text-primary">{String(index + 1).padStart(2, "0")}</span>
+            <span className="font-mono text-xs" style={{ color: project.accent }}>{String(index + 1).padStart(2, "0")}</span>
             <span className="mono-chip">{project.tag}</span>
           </div>
           <h3 className="text-2xl sm:text-3xl font-semibold text-white leading-tight">{title}</h3>
           <p className="text-white/70 leading-relaxed">{description}</p>
 
-          <div className="flex flex-wrap gap-2 mt-6">
+          <div className={`flex flex-wrap gap-2 ${compact ? "mt-2" : "mt-6"}`}>
             {project.stack.map((tool) => (
               <span
                 key={tool}
@@ -74,7 +78,7 @@ function ProjectCard({ project, index, cardT }) {
           </div>
 
           <motion.ul
-            className="mt-6 space-y-4 text-sm text-white/80"
+            className={`${compact ? "mt-2 space-y-2" : "mt-6 space-y-4"} text-sm text-white/80`}
             variants={staggerChildren(0.08)}
             initial="hidden"
             animate="show"
@@ -98,11 +102,10 @@ function ProjectCard({ project, index, cardT }) {
             target={shouldOpenInNewTab ? "_blank" : undefined}
             rel={shouldOpenInNewTab ? "noreferrer" : undefined}
             className="btn-primary mt-4 magnetic-target"
-            whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
           >
             <span className="magnetic-shadow" />
-            {ctaLabel}
+            <RollText>{ctaLabel}</RollText>
             <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
               <path
                 d="M7 17L17 7M17 7H8M17 7V16"
@@ -116,9 +119,13 @@ function ProjectCard({ project, index, cardT }) {
         </div>
 
         {hasMediaPanel && (
-          <div className="space-y-6">
+          <div className={compact ? "space-y-4" : "space-y-6"}>
             {hasPoster ? (
-              <CinematicImage src={project.poster} alt={`${project.title} interface`} />
+              <CinematicImage
+                src={project.poster}
+                alt={`${project.title} interface`}
+                className={compact ? "max-h-[240px]" : ""}
+              />
             ) : !hasMetrics ? (
               <div className="rounded-[32px] border border-dashed border-white/15 bg-white/5 p-8 flex flex-col justify-center h-full">
                 <p className="text-xs uppercase tracking-[0.3em] leading-[1.3] text-white/50">{cardT.mediaPrivate}</p>

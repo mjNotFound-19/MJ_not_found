@@ -141,6 +141,7 @@ export const ABOUT_FEATURES = [
 export const EXPERIENCE = [
   {
     role: "Founder",
+    highlight: { value: "Arachnid", label: "AI coding-agent security layer" },
     org: "Stealth Startup - United States",
     period: "Aug 2026 - Present",
     bullets: [
@@ -150,7 +151,8 @@ export const EXPERIENCE = [
   },
   {
     role: "AI & Machine Learning Researcher (Contract)",
-    org: "Handshake - West Lafayette, IN",
+    highlight: { value: "Frontier", label: "model coding benchmarks" },
+    org: "Handshake - Remote",
     period: "May 2026 - Present",
     bullets: [
       "Author advanced software-engineering benchmark problems, reference solutions and automated judge test cases used to measure the coding capability of frontier models for leading AI labs.",
@@ -159,6 +161,7 @@ export const EXPERIENCE = [
   },
   {
     role: "AI Researcher",
+    highlight: { value: "<10 of 100+", label: "selected for the research team" },
     org: "Purdue University CS Dept. - West Lafayette, IN",
     period: "May 2026 - Aug 2026",
     bullets: [
@@ -169,6 +172,7 @@ export const EXPERIENCE = [
   },
   {
     role: "Data Science Researcher - Supply Chain Forecasting",
+    highlight: { value: "13.4% WAPE", label: "across 1,500+ suppliers" },
     org: "Caterpillar Inc. (The Data Mine) - West Lafayette, IN",
     period: "Aug 2025 - May 2026",
     bullets: [
@@ -178,6 +182,7 @@ export const EXPERIENCE = [
   },
   {
     role: "Data Science Researcher - Network Security Analytics",
+    highlight: { value: "15M+/min", label: "network flows monitored" },
     org: "Caterpillar Inc. (The Data Mine) - West Lafayette, IN",
     period: "Jan 2025 - May 2025",
     bullets: [
@@ -188,6 +193,7 @@ export const EXPERIENCE = [
   },
   {
     role: "Data Science Researcher - Agricultural Forecasting",
+    highlight: { value: "3 states", label: "corn + soybean forecasts" },
     org: "BASF (The Data Mine) - West Lafayette, IN",
     period: "Aug 2024 - Dec 2024",
     bullets: [
@@ -197,6 +203,7 @@ export const EXPERIENCE = [
   },
   {
     role: "Machine Learning Intern",
+    highlight: { value: "IDS + SIEM", label: "automotive intrusion detection" },
     org: "Avolta, Inc. - Remote",
     period: "Dec 2023 - Jun 2024",
     bullets: [
@@ -208,6 +215,7 @@ export const EXPERIENCE = [
 export const PROJECTS = [
   {
     id: "arachnid",
+    accent: "#00AEEF",
     title: "Arachnid - Guardrails for AI Coding Agents",
     tag: "Founder / in stealth",
     description:
@@ -228,6 +236,7 @@ export const PROJECTS = [
   },
   {
     id: "flat-out-f1",
+    accent: "#FF8000",
     title: "Flat Out F1 v2 - Race Prediction Pipeline",
     tag: "Monte Carlo + ensembles",
     description:
@@ -251,6 +260,7 @@ export const PROJECTS = [
   },
   {
     id: "supply-chain-tft",
+    accent: "#34D399",
     title: "Supply Chain Forecasting - Caterpillar",
     tag: "Production forecasting",
     description:
@@ -273,6 +283,7 @@ export const PROJECTS = [
   },
   {
     id: "cat-network-traffic",
+    accent: "#A78BFA",
     title: "Network Security Analytics - Caterpillar",
     tag: "Network analytics",
     description:
@@ -292,6 +303,7 @@ export const PROJECTS = [
   },
   {
     id: "avolta-security",
+    accent: "#F43F5E",
     title: "Automotive Intrusion Detection - Avolta",
     tag: "Security + embedded ML",
     description:

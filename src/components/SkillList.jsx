@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { SKILLS } from "../config/content";
-import { fadeUp, hoverCard, staggerChildren } from "../lib/motion";
+import { fadeUp, staggerChildren } from "../lib/motion";
 
 const skillEntries = Object.entries(SKILLS);
 
@@ -11,14 +11,16 @@ export default function SkillList() {
       initial="hidden"
       whileInView="show"
       viewport={{ once: true, amount: 0.2 }}
-      className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"
+      className="grid grid-cols-1 gap-5"
     >
       {skillEntries.map(([title, items], index) => (
         <motion.div
           key={title}
           variants={fadeUp(index * 0.05, 30)}
-          whileHover={hoverCard.whileHover}
-          className="glass-panel p-6 rounded-[28px]"
+          // A plain lift: scaling or tilting would soften the text while it's hovered.
+          whileHover={{ y: -4 }}
+          transition={{ duration: 0.3 }}
+          className="glass-panel skill-card p-6 rounded-[28px]"
         >
           <div className="flex items-center gap-3">
             <span className="w-11 h-11 rounded-xl bg-primary/10 border border-primary/30 grid place-items-center font-mono text-sm font-semibold text-primary">

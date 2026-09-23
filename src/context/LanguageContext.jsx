@@ -7,6 +7,7 @@ const EN_TRANSLATION = {
     projects: "Projects",
     skills: "Skills",
     contact: "Contact",
+    bucket: "Bucket list",
     connect: "Get in touch",
   },
   hero: {
@@ -76,6 +77,23 @@ const EN_TRANSLATION = {
     metricsTitle: "Key numbers",
     metricsSub: "From the project",
     metricsLive: "measured",
+  },
+  statement: {
+    text: "I build AI systems, then I build the tests that prove whether they actually work. Right now that means guardrails for autonomous coding agents and benchmarks that push frontier models.",
+    accents: ["build", "tests", "work", "guardrails", "benchmarks"],
+  },
+  marquee: ["AI coding agents", "LLM evaluation", "RAG pipelines", "Google Cloud", "Forecasting", "Security"],
+  marqueeSkills: ["Python", "TypeScript", "PyTorch", "GCP", "Grafana", "scikit-learn", "Node.js", "SQL"],
+  projectsScrollHint: "keep scrolling ->",
+  manifesto: [
+    { text: "BUILD IT.", caption: "design the system" },
+    { text: "BREAK IT.", caption: "threat-model and attack it" },
+    { text: "MEASURE IT.", caption: "benchmark it against reality" },
+    { text: "SHIP IT.", caption: "put it in front of people" },
+  ],
+  closing: {
+    first: "Shipping isn't the finish line.",
+    second: "Measuring it is.",
   },
   projects: {},
   experience: {},

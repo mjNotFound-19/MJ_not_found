@@ -85,7 +85,7 @@ export default function About() {
       </div>
 
       <div id="experience" className="space-y-10">
-        <p className="section-eyebrow">
+        <p className="section-eyebrow on-rain">
           <span className="text-primary">02</span>
           <span className="section-eyebrow-rule" aria-hidden />
           {aboutText.experienceTitle}

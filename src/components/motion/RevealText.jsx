@@ -21,7 +21,8 @@ export default function RevealText({
     <motion.div
       variants={staggerChildren(0.08, delay)}
       initial="hidden"
-      animate="show"
+      whileInView="show"
+      viewport={{ once: true, amount: 0.4 }}
       className="overflow-hidden"
     >
       <ComponentTag className={className}>
