@@ -12,7 +12,7 @@ export const CONTACT = {
 
 export const HERO = {
   roles: [
-    "securing autonomous AI coding agents",
+    "building a local-first OS for AI agents",
     "writing frontier-model coding benchmarks",
     "shipping data-intensive systems on GCP",
     "forecasting demand across 1,500+ suppliers",
@@ -45,11 +45,11 @@ export const HERO = {
   ],
   spotlight: [
     {
-      title: "Arachnid",
-      org: "Founder, Stealth Startup",
+      title: "Stealth startup",
+      org: "Founder",
       status: "Current",
       description:
-        "An intent-aware security layer that monitors and constrains autonomous AI coding agents. I own the architecture, the threat modeling and the implementation.",
+        "A local-first operating system for AI agents: workloads run on-device by default and burst to rented cloud GPUs when local resources run short. I own the architecture and implementation.",
     },
     {
       title: "Handshake",
@@ -120,9 +120,9 @@ export const MOMENTUM_PILLS = [
 export const ABOUT_FEATURES = [
   {
     title: "AI coding agents",
-    detail: "Build + secure",
+    detail: "Build + evaluate",
     description:
-      "I write frontier-model coding benchmarks and judge test cases, and I'm building Arachnid to keep autonomous coding agents inside their intended scope.",
+      "I write frontier-model coding benchmarks and judge test cases, and I'm building a local-first operating system for running AI agents.",
   },
   {
     title: "Cloud data systems",
@@ -141,12 +141,12 @@ export const ABOUT_FEATURES = [
 export const EXPERIENCE = [
   {
     role: "Founder",
-    highlight: { value: "Arachnid", label: "AI coding-agent security layer" },
+    highlight: { value: "Agent OS", label: "local-first, cloud GPU burst" },
     org: "Stealth Startup - United States",
     period: "Aug 2026 - Present",
     bullets: [
-      "Building Arachnid, an intent-aware security layer that monitors and constrains autonomous AI coding agents.",
-      "Own the system architecture, threat modeling and implementation.",
+      "Building a local-first operating system for AI agents that runs agent workloads on-device by default and seamlessly bursts to rented cloud GPU compute when local resources are constrained.",
+      "Own the system architecture and implementation.",
     ],
   },
   {
@@ -214,23 +214,23 @@ export const EXPERIENCE = [
 
 export const PROJECTS = [
   {
-    id: "arachnid",
+    id: "agent-os",
     accent: "#00AEEF",
-    title: "Arachnid - Guardrails for AI Coding Agents",
+    title: "Stealth - A Local-First OS for AI Agents",
     tag: "Founder / in stealth",
     description:
-      "An intent-aware security layer that sits between an autonomous AI coding agent and the system it works on. It watches what the agent does, checks that against what it was asked to do, and constrains actions that drift out of scope.",
+      "An operating system for AI agents that puts your own machine first. Agent workloads run on-device by default, and when local resources run short it seamlessly bursts to rented cloud GPU compute.",
     highlights: [
-      "Monitors and constrains agent actions based on intent, not just static allowlists.",
-      "Threat model built around the ways autonomous coding agents go wrong.",
-      "I own the architecture, threat modeling and implementation.",
+      "Local-first: agent workloads run on-device by default.",
+      "Bursts seamlessly to rented cloud GPU compute when local resources are constrained.",
+      "I own the system architecture and implementation.",
     ],
-    stack: ["AI coding agents", "Threat modeling", "Security", "LLM orchestration"],
+    stack: ["AI agents", "Local-first", "On-device compute", "Cloud GPU bursting"],
     metrics: [],
     poster: null,
     mediaPanel: false,
     cta: {
-      label: "Ask about Arachnid",
+      label: "Ask about it",
       href: "#contact",
     },
   },
