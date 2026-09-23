@@ -1,10 +1,14 @@
-export default function Footer(){
+import { useLanguage } from "../context/LanguageContext";
+
+export default function Footer() {
+  const { t } = useLanguage();
   return (
-    <footer className="border-top border-gray-800 py-8 mt-10">
-      <div className="max-w-6xl mx-auto px-6 text-sm text-gray-500 flex flex-col sm:flex-row gap-3 sm:items-center justify-between">
-        <p>© {new Date().getFullYear()} Manas Jha. All rights reserved.</p>
-        <p>Built with React, Vite & Tailwind.</p>
+    <footer className="relative py-14 mt-24">
+      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
+      <div className="section-shell text-sm text-white/60 flex flex-col sm:flex-row gap-3 sm:items-center justify-between">
+        <p>{t.footer.credit()}</p>
+        <p>{t.footer.stack}</p>
       </div>
     </footer>
-  )
+  );
 }

@@ -1,12 +1,16 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <meta http-equiv="refresh" content="0; url=/MJ_not_found/" />
-    <script>
-      // This ensures even JS-based redirects work in some browsers
-      const repo = "/MJ_not_found/";
-      const redirect = window.location.origin + repo;
-      window.location.replace(redirect);
+    <meta charset="UTF-8" />
+    <title>Redirecting...</title>
+    <script type="text/javascript">
+      // Site is served from the root of manasjha.online.
+      const path = window.location.pathname;
+
+      // only redirect if not trying to access a file (like .pdf, .png, .jpg, etc.)
+      if (path !== "/" && !path.match(/\.[a-zA-Z0-9]+$/)) {
+        window.location.replace("/");
+      }
     </script>
   </head>
   <body>

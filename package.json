@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "homepage": "https://mjnotfound-19.github.io/MJ/",
+  "homepage": "https://manasjha.online/",
   "scripts": {
     "dev": "vite",
     "build": "vite build",

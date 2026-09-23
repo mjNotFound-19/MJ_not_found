@@ -1,5 +1,6 @@
 // src/SpotlightCursor.jsx
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 export default function SpotlightCursor({
   size = 14, // small circle
@@ -8,10 +9,35 @@ export default function SpotlightCursor({
   disabledOnTouch = true,
 }) {
   const dotRef = useRef(null);
+  const [portalTarget, setPortalTarget] = useState(null);
+  const styleRef = useRef(null);
+  const [touchOnlyPointer, setTouchOnlyPointer] = useState(false);
+
+  useEffect(() => {
+    if (typeof document === "undefined") return undefined;
+    setPortalTarget(document.body);
+    return () => setPortalTarget(null);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return undefined;
+    const evaluatePointer = () => {
+      const fine = window.matchMedia("(pointer: fine)").matches;
+      const touchOnly = navigator.maxTouchPoints > 0 && !fine;
+      setTouchOnlyPointer(touchOnly);
+    };
+    evaluatePointer();
+    const media = window.matchMedia("(pointer: fine)");
+    const listener = () => evaluatePointer();
+    media.addEventListener("change", listener);
+    return () => media.removeEventListener("change", listener);
+  }, []);
 
   useEffect(() => {
     // Disable on touchscreens
-    if (disabledOnTouch && ("ontouchstart" in window || navigator.maxTouchPoints > 0)) return;
+    if (typeof window === "undefined") return undefined;
+    if (disabledOnTouch && touchOnlyPointer) return undefined;
+    if (!portalTarget) return undefined;
 
     const el = dotRef.current;
     if (!el) return;
@@ -24,6 +50,7 @@ export default function SpotlightCursor({
       }
     `;
     document.head.appendChild(style);
+    styleRef.current = style;
 
     const move = (e) => {
       const x = e.clientX - size / 2;
@@ -35,11 +62,16 @@ export default function SpotlightCursor({
 
     return () => {
       window.removeEventListener("mousemove", move);
-      document.head.removeChild(style);
+      if (styleRef.current) {
+        document.head.removeChild(styleRef.current);
+        styleRef.current = null;
+      }
     };
-  }, [size, disabledOnTouch]);
+  }, [size, disabledOnTouch, portalTarget]);
 
-  return (
+  if (!portalTarget || (disabledOnTouch && touchOnlyPointer)) return null;
+
+  return createPortal(
     <div
       ref={dotRef}
       aria-hidden="true"
@@ -53,11 +85,12 @@ export default function SpotlightCursor({
         backgroundColor: color,
         boxShadow: glow,
         pointerEvents: "none",
-        zIndex: 9999,
+        zIndex: 2147483647,
         mixBlendMode: "screen",
         transition: "transform 25ms linear",
+        willChange: "transform",
       }}
-    />
+    />,
+    portalTarget
   );
 }
-

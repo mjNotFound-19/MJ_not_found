@@ -1,0 +1,40 @@
+<svg width="960" height="640" viewBox="0 0 960 640" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#030712" />
+      <stop offset="45%" stop-color="#050a1f" />
+      <stop offset="100%" stop-color="#03050b" />
+    </linearGradient>
+    <linearGradient id="stroke" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#00AEEF" stop-opacity="0.1" />
+      <stop offset="50%" stop-color="#8E7CFF" stop-opacity="0.4" />
+      <stop offset="100%" stop-color="#00E5FF" stop-opacity="0.6" />
+    </linearGradient>
+    <radialGradient id="glow" cx="70%" cy="30%" r="60%">
+      <stop offset="0%" stop-color="#00CFFF" stop-opacity="0.45" />
+      <stop offset="100%" stop-color="#00CFFF" stop-opacity="0" />
+    </radialGradient>
+  </defs>
+  <rect width="960" height="640" fill="url(#bg)" rx="32" />
+  <rect width="960" height="640" fill="url(#glow)" />
+  <g opacity="0.25">
+    <path d="M0 120 H960" stroke="url(#stroke)" stroke-width="1" />
+    <path d="M0 200 H960" stroke="url(#stroke)" stroke-width="1" />
+    <path d="M0 280 H960" stroke="url(#stroke)" stroke-width="1" />
+    <path d="M0 360 H960" stroke="url(#stroke)" stroke-width="1" />
+    <path d="M0 440 H960" stroke="url(#stroke)" stroke-width="1" />
+    <path d="M0 520 H960" stroke="url(#stroke)" stroke-width="1" />
+    <path d="M80 0 V640" stroke="url(#stroke)" stroke-width="1" />
+    <path d="M200 0 V640" stroke="url(#stroke)" stroke-width="1" />
+    <path d="M320 0 V640" stroke="url(#stroke)" stroke-width="1" />
+    <path d="M440 0 V640" stroke="url(#stroke)" stroke-width="1" />
+    <path d="M560 0 V640" stroke="url(#stroke)" stroke-width="1" />
+    <path d="M680 0 V640" stroke="url(#stroke)" stroke-width="1" />
+    <path d="M800 0 V640" stroke="url(#stroke)" stroke-width="1" />
+    <path d="M920 0 V640" stroke="url(#stroke)" stroke-width="1" />
+  </g>
+  <path d="M80 440 L240 360 L420 420 L600 280 L780 320 L920 220" stroke="url(#stroke)" stroke-width="4" fill="none" />
+  <circle cx="600" cy="280" r="8" fill="#00AEEF" />
+  <circle cx="420" cy="420" r="8" fill="#8E7CFF" />
+  <circle cx="780" cy="320" r="8" fill="#00E5FF" />
+</svg>
