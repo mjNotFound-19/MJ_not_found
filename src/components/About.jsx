@@ -66,7 +66,7 @@ export default function About() {
               <GraduationCap size={18} aria-hidden />
             </span>
             <div>
-              <p className="font-semibold">B.A. Artificial Intelligence</p>
+              <p className="font-semibold">Bachelors in Artificial Intelligence</p>
               <p className="text-sm text-white/60">Purdue University - Conferred 2026</p>
               <p className="text-xs text-white/45 mt-1 leading-relaxed">
                 26 CS credit hours: OOP, Computer Architecture, Foundations of CS, Programming in C,

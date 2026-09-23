@@ -15,7 +15,7 @@ const EN_TRANSLATION = {
     line1: "Hi, I'm",
     prompt: "currently",
     body:
-      "Software engineer with a B.A. in Artificial Intelligence from Purdue (2026) and 2+ years building cloud-based, data-intensive systems on Google Cloud. I write frontier-model coding benchmarks at Handshake and I'm founding a stealth startup building a local-first operating system for AI agents.",
+      "Software engineer with a Bachelors in Artificial Intelligence from Purdue (2026) and 2+ years building cloud-based, data-intensive systems on Google Cloud. I write frontier-model coding benchmarks at Handshake and I'm founding a stealth startup building a local-first operating system for AI agents.",
     location: "Atlanta, GA - US citizen - open to hybrid on-site",
     nowTitle: "~/now",
     ctas: {
