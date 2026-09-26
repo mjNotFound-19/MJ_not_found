@@ -400,9 +400,11 @@ function consoleEl(nx) {
   const keys = h("div", { class: "c-cell c-keys", role: "group", "aria-label": "Driver keys" });
   const con = h("section", { class: "console", "aria-label": "Race engineer console" });
   const cam = camEl();
+  let showDials = () => {};
   const select = (d) => {
     keys.querySelectorAll(".key").forEach((k) => k.setAttribute("aria-pressed", String(k.dataset.d === d.Driver)));
     cam.show(d);
+    showDials(d);
     lcdPrint(con, readout(d));
   };
   D.forEach((d) => keys.append(h("button", { type: "button", class: "key", "data-d": d.Driver, style: `--team:${teamColor(d.Team)}`, "aria-pressed": "false",
@@ -416,15 +418,36 @@ function consoleEl(nx) {
     const step = () => { select(byWin[idx % 10]); idx += 1; };
     step(); con._auto = setInterval(() => { if (!document.contains(con)) return clearInterval(con._auto); step(); }, 4200);
   });
-  const dial = (v, value, label, tip) => h("div", { class: "dial", "data-tip": tip }, h("div", { class: "knob", style: `--a:${angle(v)}`, "aria-hidden": "true" }), h("b", {}, value), h("span", {}, label));
+  const dial = () => {
+    const knob = h("div", { class: "knob", "aria-hidden": "true" }), b = h("b"), span = h("span");
+    const el = h("div", { class: "dial" }, knob, b, span);
+    const set = ([v, value, label, tip]) => {
+      const a = angle(v);
+      if (window.gsap && knob.style.getPropertyValue("--a")) gsap.to(knob, { "--a": a, duration: 1.1, ease: "elastic.out(1, 0.6)", overwrite: true });
+      else knob.style.setProperty("--a", a);
+      b.textContent = value; span.textContent = label; el.dataset.tip = tip;
+    };
+    return { el, set };
+  };
   const margin = byWin[0].win - byWin[1].win;
+  const raceDials = [
+    [m.p_sc, pct(m.p_sc), "Safety car", "chance of at least one safety car or red flag"],
+    [avg("stop2") + avg("stop3p"), pct(avg("stop2") + avg("stop3p")), "Two stops+", "share of cars making two or more stops"],
+    [Math.min(1, margin / 0.2), `+${fx(margin * 100, 1)}`, "Fav. margin", "favourite's win chance minus the next driver's, in points"],
+  ];
+  const driverDials = (d) => [
+    [d.podium, pct(d.podium), "Podium", `${name(d.Driver)}: chance of a top-3 finish`],
+    [d.points, pct(d.points), "Points", `${name(d.Driver)}: chance of finishing in the top 10`],
+    [(D.length - d.exp_pos) / (D.length - 1), `P${fx(d.exp_pos, 1)}`, "Avg finish", `${name(d.Driver)}: average finishing position over all simulations`],
+  ];
+  const dials = [dial(), dial(), dial()];
+  dials.forEach((x, i) => x.set(raceDials[i]));
+  const dialBox = h("div", { class: "c-cell c-dials" }, dials.map((x) => x.el));
+  showDials = (d) => { dialBox.style.setProperty("--knob", teamColor(d.Team)); dials.forEach((x, i) => x.set(driverDials(d)[i])); };
   con.append(h("div", { class: "console-grid" },
     cam.el,
     h("div", { class: "c-cell c-lcd", "aria-hidden": "true" }),
-    h("div", { class: "c-cell c-dials" },
-      dial(m.p_sc, pct(m.p_sc), "Safety car", "chance of at least one safety car or red flag"),
-      dial(avg("stop2") + avg("stop3p"), pct(avg("stop2") + avg("stop3p")), "Two stops+", "share of cars making two or more stops"),
-      dial(Math.min(1, margin / 0.2), `+${fx(margin * 100, 1)}`, "Fav. margin", "favourite's win chance minus the next driver's, in points")),
+    dialBox,
     keys,
     h("div", { class: "c-foot" }, auto, h("span", { class: "c-brand" }, h("b", {}, "f1"), ".h race engineer"), h("span", {}, "keys = drivers in predicted order"))),
     h("p", { class: "sr-only c-live", "aria-live": "polite" }));
