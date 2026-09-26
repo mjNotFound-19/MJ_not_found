@@ -15,7 +15,14 @@ if (g && !REDUCED) {
   let ctx = null;
   let last = "";
   let introDone = false;
-  const fontsReady = document.fonts ? document.fonts.ready : Promise.resolve();
+  // request the display font explicitly; fonts.ready alone can resolve before Tektur is even requested
+  const settled = () => new Promise((res) => {   // other faces (Fira Code) can re-enter "loading"; wait until the set is idle, max 2s
+    const t0 = performance.now();
+    (function poll() { if (document.fonts.status === "loaded" || performance.now() - t0 > 2000) res(); else setTimeout(poll, 50); })();
+  });
+  const fontsReady = document.fonts
+    ? Promise.all([document.fonts.load("800 40px Tektur"), document.fonts.load("400 40px Tektur"), document.fonts.load("500 14px 'Fira Code'")]).catch(() => {}).then(settled)
+    : Promise.resolve();
   const pending = [];
 
   /* ---------------------------------------------------------------- helpers */
@@ -25,8 +32,9 @@ if (g && !REDUCED) {
   function splitHeadline(h1, delay = 0) {
     if (!h1 || h1.dataset.split) return;
     h1.dataset.split = "1";
-    const split = SplitText.create(h1, { type: "words,chars", mask: "words" });
-    g.from(split.chars, { yPercent: 110, rotateX: -50, opacity: 0, duration: 0.9, stagger: 0.022, delay });
+    // autoSplit re-splits (and re-runs the tween) if fonts finish loading after the first split
+    SplitText.create(h1, { type: "words,chars", mask: "words", autoSplit: true,
+      onSplit: (self) => g.from(self.chars, { yPercent: 110, rotateX: -50, opacity: 0, duration: 0.9, stagger: 0.022, delay }) });
   }
   function countUp(el) {
     const node = [...el.childNodes].find((n) => n.nodeType === 3 && /[\d.]+/.test(n.textContent));
@@ -129,7 +137,7 @@ if (g && !REDUCED) {
         splitHeadline(hero.querySelector("h1"), 0.1);
         tl.from(hero.querySelector(".eyebrow"), { opacity: 0, x: -20, duration: 0.6 }, 0)
           .from(hero.querySelectorAll(".chip"), { opacity: 0, y: 14, stagger: 0.06, duration: 0.6 }, 0.35)
-          .from(hero.querySelectorAll(".countdown > div"), { opacity: 0, y: 20, rotateX: -70, transformPerspective: 600, stagger: 0.07, duration: 0.8 }, 0.45)
+          .from(hero.querySelectorAll(".flipclock .flap"), { opacity: 0, rotateX: -90, transformPerspective: 500, transformOrigin: "50% 0%", stagger: 0.05, duration: 0.7, ease: "back.out(1.6)" }, 0.45)
           .from(hero.querySelector(".trackcard"), { opacity: 0, x: 30, duration: 0.8 }, 0.55)
           .from(hero.querySelector(".hero-note"), { opacity: 0, y: 12, duration: 0.6 }, 0.7)
           .from(hero.querySelector(".hero-portrait img"), { opacity: 0, y: 80, scale: 1.06, duration: 1.4, ease: "expo.out" }, 0.1)

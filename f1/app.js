@@ -434,19 +434,54 @@ function marqueeEl(list) {
   const track = h("div", { class: "marquee-track" }, list.map(item), list.map((d) => { const e = item(d); e.setAttribute("aria-hidden", "true"); return e; }));
   return h("div", { class: "marquee", role: "img", "aria-label": `Win chances: ${list.map((d) => `${d.Driver} ${pct(d.win)}`).join(", ")}` }, track);
 }
+/* split-flap (Solari) clock: each digit is a tile whose top half falls away to reveal the next digit */
+function flapDigit(ch) {
+  const half = (cls) => h("span", { class: cls, "aria-hidden": "true" }, h("span", {}, ch));
+  const el = h("span", { class: "flap" }, half("fl-top"), half("fl-bottom"), half("fl-leaf fl-leaf-top"), half("fl-leaf fl-leaf-bottom"));
+  el.dataset.v = ch;
+  return el;
+}
+function flapTo(el, ch) {
+  const old = el.dataset.v;
+  if (old === ch) return;
+  el.dataset.v = ch;
+  const [top, bottom, leafTop, leafBottom] = el.children;
+  const set = (node, v) => { node.firstChild.textContent = v; };
+  if (reduced()) { [top, bottom, leafTop, leafBottom].forEach((n) => set(n, ch)); return; }
+  set(top, ch);          // behind the falling leaf: next digit, upper half
+  set(leafTop, old);     // falling leaf: current digit, upper half
+  set(leafBottom, ch);   // rising leaf: next digit, lower half
+  set(bottom, old);      // stays until the new lower half lands
+  el.classList.remove("flipping"); void el.offsetWidth; el.classList.add("flipping");
+  clearTimeout(el._t);
+  el._t = setTimeout(() => { set(bottom, ch); set(leafTop, ch); el.classList.remove("flipping"); }, 620);
+}
 function countdownEl(m) {
   const iso = m.sessions && m.sessions.R;
   if (!iso) return null;
-  const t = new Date(iso).getTime(), box = h("div", { class: "countdown", "aria-label": "time to lights out", role: "timer" });
-  const units = [["days", 86400], ["hrs", 3600], ["min", 60], ["sec", 1]];
-  const cells = units.map(([l]) => { const b = h("b", {}, "00"); box.append(h("div", {}, b, h("span", {}, l.toUpperCase()))); return b; });
+  const t = new Date(iso).getTime();
+  const units = [["days", 86400], ["hours", 3600], ["minutes", 60], ["seconds", 1]];
+  const box = h("div", { class: "flipclock", role: "timer", "aria-label": "time to lights out" });
+  const live = h("span", { class: "sr-only" });
+  const groups = units.map(([label], i) => {
+    const digits = h("span", { class: "fc-digits" }, flapDigit("0"), flapDigit("0"));
+    const g = h("span", { class: "fc-group" }, digits, h("span", { class: "fc-label" }, label));
+    if (i) box.append(h("span", { class: "fc-colon", "aria-hidden": "true" }, h("i"), h("i")));
+    box.append(g);
+    return digits;
+  });
+  box.append(live);
   const tick = () => {
     let s = Math.max(0, Math.floor((t - Date.now()) / 1000));
-    if (s === 0) { box.innerHTML = "<div><b>GO</b><span>lights out</span></div>"; clearInterval(state.cd); return; }
-    units.forEach(([, sec], i) => {
-      const v = String(Math.floor(s / sec)).padStart(2, "0"); s %= sec;
-      if (cells[i].textContent !== v) { cells[i].textContent = v; cells[i].classList.remove("flip"); void cells[i].offsetWidth; cells[i].classList.add("flip"); }
+    if (s === 0) { box.innerHTML = '<span class="fc-go">Lights out</span>'; clearInterval(state.cd); return; }
+    const vals = units.map(([, sec]) => { const v = Math.floor(s / sec); s %= sec; return v; });
+    vals.forEach((v, i) => {
+      const str = String(v).padStart(2, "0");
+      const digits = groups[i];
+      while (digits.children.length < str.length) digits.prepend(flapDigit("0"));   // 100+ days
+      [...str].forEach((c, k) => flapTo(digits.children[k], c));
     });
+    live.textContent = `${vals[0]} days ${vals[1]} hours ${vals[2]} minutes to lights out`;
   };
   tick(); clearInterval(state.cd); state.cd = setInterval(tick, 1000);
   return box;

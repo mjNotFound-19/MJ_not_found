@@ -534,3 +534,33 @@ h1, h2, .tabs a, .brand, .kicker, .eyebrow { font-stretch: 100%; }
 .split-mask { overflow: hidden; }
 
 .gsap-on .knob::after { transition: none; }
+
+
+/* ================================================================ split-flap (Solari) countdown */
+.flipclock { display: flex; align-items: flex-start; gap: 6px; padding: 10px 12px 8px; border-radius: 12px; background: #16171a; box-shadow: inset 0 1px 0 rgba(255, 255, 255, .05), inset 0 0 0 1px #0a0b0d, 0 10px 24px rgba(0, 0, 0, .45); }
+.flipclock .fc-group { display: grid; justify-items: center; gap: 6px; }
+.flipclock .fc-digits { display: flex; gap: 3px; }
+.flipclock .fc-label { font: 600 10px/1 var(--display); letter-spacing: .16em; text-transform: uppercase; color: #8d9199; }
+.flipclock .fc-colon { display: grid; gap: 12px; align-content: center; height: 58px; padding: 0 1px; }
+.flipclock .fc-colon i { width: 5px; height: 5px; border-radius: 1px; background: #cfd2d6; }
+.flap { --fh: 58px; position: relative; display: block; width: 40px; height: var(--fh); perspective: 260px; font: 700 42px/var(--fh) var(--display); color: #f2f3f5; text-align: center; font-variant-numeric: tabular-nums; }
+.flap > span { position: absolute; left: 0; right: 0; height: 50%; overflow: hidden; background: linear-gradient(180deg, #34363c, #2a2c31); backface-visibility: hidden; }
+.flap > span > span { display: block; height: var(--fh); }
+.flap .fl-top, .flap .fl-leaf-top { top: 0; border-radius: 6px 6px 0 0; }
+.flap .fl-bottom, .flap .fl-leaf-bottom { bottom: 0; border-radius: 0 0 6px 6px; background: linear-gradient(180deg, #26282d, #202227); }
+.flap .fl-bottom > span, .flap .fl-leaf-bottom > span { transform: translateY(-50%); }
+/* the hinge: dark split line with side pins */
+.flap::after { content: ""; position: absolute; left: 0; right: 0; top: calc(50% - 1px); height: 2px; background: #0b0c0e; z-index: 4; box-shadow: 0 1px 0 rgba(255, 255, 255, .04); }
+.flap::before { content: ""; position: absolute; left: -2px; right: -2px; top: calc(50% - 3px); height: 6px; z-index: 5; background: radial-gradient(circle at 2px 3px, #4a4d54 2px, transparent 2.5px), radial-gradient(circle at calc(100% - 2px) 3px, #4a4d54 2px, transparent 2.5px); }
+.flap .fl-leaf { z-index: 3; visibility: hidden; }
+.flap .fl-leaf-top { transform-origin: 50% 100%; }
+.flap .fl-leaf-bottom { transform-origin: 50% 0%; transform: rotateX(90deg); }
+.flap.flipping .fl-leaf { visibility: visible; }
+.flap.flipping .fl-leaf-top { animation: flap-down .3s cubic-bezier(.55, .05, .9, .45) forwards; }
+.flap.flipping .fl-leaf-bottom { animation: flap-up .3s cubic-bezier(.1, .6, .3, 1) .3s forwards; }
+.flap.flipping .fl-leaf-top::after, .flap.flipping .fl-bottom::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, transparent, rgba(0, 0, 0, .45)); animation: flap-shade .6s forwards; }
+@keyframes flap-down { to { transform: rotateX(-90deg); } }
+@keyframes flap-up { from { transform: rotateX(90deg); } to { transform: rotateX(0deg); } }
+@keyframes flap-shade { 0% { opacity: 0; } 50% { opacity: 1; } 100% { opacity: 0; } }
+.fc-go { font: 700 28px var(--display); letter-spacing: .12em; text-transform: uppercase; color: var(--primary-hi); padding: 8px 10px; }
+@media (max-width: 480px) { .flap { --fh: 46px; width: 31px; font-size: 32px; } .flipclock .fc-colon { height: 46px; gap: 9px; } .flipclock { gap: 4px; padding: 8px; } }
