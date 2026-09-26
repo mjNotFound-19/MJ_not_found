@@ -399,8 +399,10 @@ function consoleEl(nx) {
   ];
   const keys = h("div", { class: "c-cell c-keys", role: "group", "aria-label": "Driver keys" });
   const con = h("section", { class: "console", "aria-label": "Race engineer console" });
+  const cam = camEl();
   const select = (d) => {
     keys.querySelectorAll(".key").forEach((k) => k.setAttribute("aria-pressed", String(k.dataset.d === d.Driver)));
+    cam.show(d);
     lcdPrint(con, readout(d));
   };
   D.forEach((d) => keys.append(h("button", { type: "button", class: "key", "data-d": d.Driver, style: `--team:${teamColor(d.Team)}`, "aria-pressed": "false",
@@ -417,7 +419,7 @@ function consoleEl(nx) {
   const dial = (v, value, label, tip) => h("div", { class: "dial", "data-tip": tip }, h("div", { class: "knob", style: `--a:${angle(v)}`, "aria-hidden": "true" }), h("b", {}, value), h("span", {}, label));
   const margin = byWin[0].win - byWin[1].win;
   con.append(h("div", { class: "console-grid" },
-    h("div", { class: "c-cell c-grille", "aria-hidden": "true" }),
+    cam.el,
     h("div", { class: "c-cell c-lcd", "aria-hidden": "true" }),
     h("div", { class: "c-cell c-dials" },
       dial(m.p_sc, pct(m.p_sc), "Safety car", "chance of at least one safety car or red flag"),
@@ -428,6 +430,30 @@ function consoleEl(nx) {
     h("p", { class: "sr-only c-live", "aria-live": "polite" }));
   lcdPrint(con, intro);
   return con;
+}
+/* driver cam: a small CRT that cuts to whichever driver key is live (static burst between channels) */
+function camEl() {
+  const layer = h("div", { class: "cam-feed" });
+  const tag = h("div", { class: "cam-tag" }, h("b", {}, "--"), h("span", {}, "no signal"));
+  const num = h("div", { class: "cam-num", "aria-hidden": "true" });
+  const el = h("div", { class: "c-cell c-cam idle", "aria-hidden": "true" },
+    layer, num, h("div", { class: "cam-noise" }), h("div", { class: "cam-scan" }),
+    h("div", { class: "cam-rec" }, h("i"), "CAM"), tag);
+  let token = 0;
+  const show = (d) => {
+    const p = person(d.Driver), my = ++token;
+    el.style.setProperty("--team", teamColor(d.Team));
+    el.classList.remove("idle", "cut"); void el.offsetWidth; el.classList.add("cut");
+    const img = cutout(d.Driver, { width: 240, height: 240 });
+    const swap = () => {
+      if (my !== token) return;
+      layer.replaceChildren(img || h("div", { class: "ini" }, d.Driver));
+      num.textContent = p.number || "";
+      tag.replaceChildren(h("b", {}, d.Driver), h("span", {}, `${pct(d.win)} win`));
+    };
+    setTimeout(swap, reduced() ? 0 : 140);
+  };
+  return { el, show };
 }
 function marqueeEl(list) {
   const item = (d) => h("span", {}, d.Driver, h("i", {}, (name(d.Driver).split(" ").slice(-1)[0] || "")), h("b", {}, pct(d.win)));
