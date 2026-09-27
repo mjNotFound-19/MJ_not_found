@@ -121,7 +121,7 @@ export default function Nav() {
               </motion.a>
               <motion.a
                 href={F1_SITE}
-                data-f1-portal
+                data-transition="f1"
                 className="nav-link nav-link-f1"
                 variants={fadeUp(0.35, 18)}
                 initial="hidden"
@@ -188,7 +188,7 @@ export default function Nav() {
               </a>
               <a
                 href={F1_SITE}
-                data-f1-portal
+                data-transition="f1"
                 className="flex items-baseline gap-3 py-2 text-lg font-medium text-gray-100"
                 onClick={() => setMenuOpen(false)}
               >

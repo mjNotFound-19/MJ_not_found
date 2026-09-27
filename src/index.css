@@ -2240,3 +2240,8 @@ button.stat-card:hover {
     animation: none;
   }
 }
+
+/* Logo on the portfolio -> f1.h page transition (nav link). */
+.f1-leave-logo {
+  font-size: clamp(3rem, 12vw, 9rem);
+}
