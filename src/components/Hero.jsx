@@ -9,6 +9,7 @@ import Typewriter from "./motion/Typewriter";
 import { useLanguage } from "../context/LanguageContext";
 import { scrollToId } from "../lib/scroll";
 import RollText from "./motion/RollText";
+import { F1_SITE } from "../lib/f1Data";
 
 export default function Hero() {
   const { t } = useLanguage();
@@ -129,6 +130,19 @@ export default function Hero() {
               >
                 <RollText>{t.hero.ctas.contact}</RollText>
               </motion.a>
+              {/* Zooms into the Flat Out F1 project, which becomes f1.h (see F1Portal). */}
+              <a href={F1_SITE} data-f1-portal className="btn-f1">
+                <span className="btn-f1-lights" aria-hidden="true">
+                  <i />
+                  <i />
+                  <i />
+                  <i />
+                  <i />
+                </span>
+                <span className="btn-f1-label">
+                  <RollText>{t.hero.ctas.f1}</RollText>
+                </span>
+              </a>
             </motion.div>
           </div>
 

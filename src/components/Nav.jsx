@@ -6,6 +6,7 @@ import { fadeUp } from "../lib/motion";
 import { CONTACT } from "../config/content";
 import { useLanguage } from "../context/LanguageContext";
 import RollText from "./motion/RollText";
+import { F1_SITE } from "../lib/f1Data";
 
 export default function Nav() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -118,6 +119,16 @@ export default function Nav() {
               >
                 <RollText>{t.nav.bucket}</RollText>
               </motion.a>
+              <motion.a
+                href={F1_SITE}
+                data-f1-portal
+                className="nav-link nav-link-f1"
+                variants={fadeUp(0.35, 18)}
+                initial="hidden"
+                animate="show"
+              >
+                <RollText>{t.nav.f1}</RollText>
+              </motion.a>
             </nav>
 
             <motion.a
@@ -174,6 +185,15 @@ export default function Nav() {
               <a href="/bucket-list/" data-transition="bucket" className="flex items-baseline gap-3 py-2 text-lg font-medium text-gray-100">
                 <span className="font-mono text-xs text-primary">06</span>
                 {t.nav.bucket}
+              </a>
+              <a
+                href={F1_SITE}
+                data-f1-portal
+                className="flex items-baseline gap-3 py-2 text-lg font-medium text-gray-100"
+                onClick={() => setMenuOpen(false)}
+              >
+                <span className="font-mono text-xs text-primary">07</span>
+                {t.nav.f1} <span className="text-white/50 text-sm">race predictor</span>
               </a>
               <a
                 href={`mailto:${CONTACT.email}`}

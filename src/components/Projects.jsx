@@ -5,6 +5,7 @@ import { fadeUp, staggerChildren } from "../lib/motion";
 import useMagnetic from "../hooks/useMagnetic";
 import { useLanguage } from "../context/LanguageContext";
 import RollText from "./motion/RollText";
+import F1ProjectCard from "./F1ProjectCard";
 
 export default function Projects() {
   const { t } = useLanguage();
@@ -17,8 +18,14 @@ export default function Projects() {
   );
 }
 
+// Flat Out F1 renders as a live miniature of its own site; everything else uses
+// the standard card. (A wrapper, so neither card's hooks run conditionally.)
+export function ProjectCard(props) {
+  return props.project.id === "flat-out-f1" ? <F1ProjectCard {...props} /> : <StandardProjectCard {...props} />;
+}
+
 // `compact` tightens spacing so a card fits inside the pinned horizontal viewport.
-export function ProjectCard({ project, index, cardT, compact = false }) {
+function StandardProjectCard({ project, index, cardT, compact = false }) {
   const { ref, magneticStyle } = useMagnetic(0.25);
   const { t } = useLanguage();
   const trans = t.projects?.[project.id];

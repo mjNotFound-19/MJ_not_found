@@ -23,6 +23,7 @@ import VelocityMarquee from "./components/motion/VelocityMarquee";
 import useSmoothScroll from "./hooks/useSmoothScroll";
 import useMediaQuery from "./hooks/useMediaQuery";
 import LeaveToBucket from "./components/LeaveToBucket";
+import F1Portal from "./components/F1Portal";
 import { readArrival, useTransitionLinks } from "./lib/pageTransition";
 import { useLanguage } from "./context/LanguageContext";
 
@@ -84,6 +85,7 @@ export default function App() {
           />
         )}
         <LeaveToBucket />
+        <F1Portal />
 
         {(loaded || !showMotion) && (
           <div style={{ position: "relative", zIndex: 1 }}>

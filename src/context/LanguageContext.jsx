@@ -8,6 +8,7 @@ const EN_TRANSLATION = {
     skills: "Skills",
     contact: "Contact",
     bucket: "Bucket list",
+    f1: "f1.h",
     connect: "Get in touch",
   },
   hero: {
@@ -21,6 +22,7 @@ const EN_TRANSLATION = {
     ctas: {
       projects: "View projects",
       contact: "Get in touch",
+      f1: "F1 race predictor",
     },
   },
   sections: {
@@ -38,7 +40,7 @@ const EN_TRANSLATION = {
     skills: {
       eyebrow: "Toolkit",
       title: "What I work with",
-      subtitle: "Languages, cloud infrastructure, ML frameworks and evaluation methods I use day to day.",
+      subtitle: "Languages, cloud infrastructure, ML frameworks, evaluation methods and the front-end and motion tools behind this site.",
     },
     contact: {
       eyebrow: "Contact",
@@ -83,7 +85,7 @@ const EN_TRANSLATION = {
     accents: ["build", "tests", "work", "operating", "benchmarks"],
   },
   marquee: ["AI coding agents", "LLM evaluation", "RAG pipelines", "Google Cloud", "Forecasting", "Security"],
-  marqueeSkills: ["Python", "TypeScript", "PyTorch", "GCP", "Grafana", "scikit-learn", "Node.js", "SQL"],
+  marqueeSkills: ["Python", "TypeScript", "PyTorch", "GCP", "React", "WebGL", "GSAP", "Framer Motion", "scikit-learn", "SQL"],
   projectsScrollHint: "keep scrolling ->",
   manifesto: [
     { text: "BUILD IT.", caption: "design the system" },

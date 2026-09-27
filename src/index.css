@@ -1712,3 +1712,531 @@ button.stat-card:hover {
   color: #111;
   text-align: center;
 }
+
+
+/* ---------- f1.h: Flat Out F1 card + takeover ----------
+   Tokens and the start-lights gantry are taken from f1.h's own stylesheet
+   (manasjha.online/f1/styles.css) so the card and the handoff match the site. */
+
+.f1h {
+  --f1-bg: #0a0b0e;
+  --f1-surface: #111318;
+  --f1-surface-2: #171a21;
+  --f1-border: #262b35;
+  --f1-text: #f4f5f7;
+  --f1-text-2: #c3c9d2;
+  --f1-muted: #9aa3b0;
+  --f1-red: #dc2626;
+  --f1-logo-red: #d61f36;
+  color: var(--f1-text);
+}
+
+/* This sheet sets a global font on `*`; override it inside f1.h surfaces. */
+.f1h,
+.f1h * {
+  font-family: "Tektur", "Bahnschrift", system-ui, sans-serif;
+}
+
+.f1h .f1h-mono,
+.f1h .f1h-mono * {
+  font-family: "Fira Code", ui-monospace, SFMono-Regular, Consolas, monospace;
+}
+
+.f1h-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 32px;
+  border: 1px solid var(--f1-border);
+  background: var(--f1-bg);
+  box-shadow: 0 30px 90px rgba(0, 0, 0, 0.55);
+}
+
+.f1h-glow {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(900px 420px at 85% -20%, rgba(220, 38, 38, 0.16), transparent 62%),
+    linear-gradient(180deg, #0e0f12, var(--f1-bg) 420px);
+}
+
+.f1h-card > * {
+  position: relative;
+}
+
+.f1h-top {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  height: 58px;
+  padding: 0 clamp(16px, 3vw, 32px);
+  border-bottom: 1px solid var(--f1-border);
+  background: rgba(10, 11, 14, 0.88);
+}
+
+.f1h-logo {
+  font-size: 21px;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: #fff;
+  white-space: nowrap;
+}
+
+.f1h-logo b {
+  color: var(--f1-logo-red);
+  font-weight: 600;
+}
+
+.f1h-tabs {
+  display: none;
+  align-items: stretch;
+  height: 100%;
+  overflow: hidden;
+}
+
+@media (min-width: 900px) {
+  .f1h-tabs {
+    display: flex;
+  }
+}
+
+.f1h-tabs span {
+  position: relative;
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--f1-muted);
+  white-space: nowrap;
+}
+
+.f1h-tabs span.is-active {
+  color: var(--f1-text);
+}
+
+.f1h-tabs span.is-active::after {
+  content: "";
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 0;
+  height: 3px;
+  border-radius: 3px 3px 0 0;
+  background: var(--f1-red);
+}
+
+.f1h-live {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--f1-text-2);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+}
+
+.f1h-live i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--f1-red);
+  box-shadow: 0 0 10px var(--f1-red);
+  animation: f1h-pulse 1.6s ease-in-out infinite;
+}
+
+.f1h-body {
+  display: grid;
+  gap: 28px;
+  padding: clamp(20px, 3vw, 32px);
+}
+
+@media (min-width: 900px) {
+  .f1h-body {
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+    align-items: center;
+  }
+}
+
+.f1h-kicker {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--f1-red);
+}
+
+.f1h-event {
+  margin-top: 6px;
+  font-size: clamp(2rem, 4.4vw, 3.6rem);
+  font-weight: 800;
+  line-height: 0.92;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+  font-stretch: 85%;
+}
+
+.f1h-sub {
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--f1-muted);
+}
+
+.f1h-odds {
+  margin-top: 20px;
+  display: grid;
+  gap: 8px;
+}
+
+.f1h-odds li {
+  display: grid;
+  grid-template-columns: 3.4rem minmax(0, 1fr) 3.4rem auto;
+  align-items: center;
+  gap: 12px;
+}
+
+.f1h-code {
+  padding-left: 8px;
+  border-left: 3px solid var(--team);
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.f1h-bar {
+  height: 10px;
+  border-radius: 999px;
+  background: var(--f1-surface-2);
+  overflow: hidden;
+}
+
+.f1h-bar span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  transform-origin: left;
+}
+
+.f1h-pct {
+  font-size: 13px;
+  font-weight: 500;
+  text-align: right;
+  color: var(--f1-text);
+}
+
+.f1h-strat {
+  display: none;
+  gap: 3px;
+}
+
+@media (min-width: 640px) {
+  .f1h-strat {
+    display: inline-flex;
+  }
+}
+
+.f1h-strat i {
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid var(--tyre);
+  font-size: 9px;
+  font-style: normal;
+  font-weight: 700;
+  color: var(--tyre);
+}
+
+.f1h-actions {
+  margin-top: 22px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.f1h-btn,
+.f1h-ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 18px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.f1h-btn {
+  background: var(--f1-red);
+  color: #fff;
+}
+
+.f1h-btn:hover {
+  background: #ef4444;
+}
+
+.f1h-ghost {
+  border: 1px solid var(--f1-border);
+  color: var(--f1-text-2);
+}
+
+.f1h-ghost:hover {
+  border-color: var(--f1-text-2);
+  color: #fff;
+}
+
+.f1h-side {
+  display: grid;
+  gap: 14px;
+}
+
+.f1h-track {
+  width: 100%;
+  max-height: 230px;
+}
+
+.f1h-circuit {
+  margin-top: -6px;
+  font-size: 11px;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--f1-muted);
+}
+
+.f1h-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  border: 1px solid var(--f1-border);
+  border-radius: 12px;
+  background: var(--f1-surface);
+}
+
+.f1h-stats div {
+  padding: 12px 10px;
+}
+
+.f1h-stats div + div {
+  border-left: 1px solid var(--f1-border);
+}
+
+.f1h-stats dt {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--f1-muted);
+}
+
+.f1h-stats dd {
+  margin-top: 4px;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.f1h-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 16px;
+  padding: 14px clamp(16px, 3vw, 32px);
+  border-top: 1px solid var(--f1-border);
+  background: var(--f1-surface);
+}
+
+.f1h-proj {
+  font-size: 11px;
+  color: var(--f1-red);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.f1h-desc {
+  font-size: 13px;
+  color: var(--f1-text-2);
+}
+
+/* Takeover: the card grows to fill the screen and becomes f1.h's start gantry. */
+.f1-takeover {
+  position: fixed;
+  z-index: 2147483646;
+  overflow: hidden;
+  will-change: top, left, width, height;
+}
+
+.f1-takeover-bar {
+  position: absolute;
+  inset: 0 0 auto;
+}
+
+.f1-takeover-stage {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 28px;
+}
+
+.f1-gantry {
+  display: flex;
+  gap: 14px;
+  padding: 16px 18px;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #1d1f24, #121317);
+  box-shadow:
+    0 20px 50px rgba(0, 0, 0, 0.6),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.f1-gantry span {
+  display: grid;
+  gap: 10px;
+  padding: 10px;
+  border-radius: 10px;
+  background: #0b0c0e;
+}
+
+.f1-gantry i {
+  width: clamp(28px, 5vw, 46px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: #2a0c0c;
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.7);
+  transition:
+    background-color 60ms,
+    box-shadow 60ms;
+}
+
+.f1-gantry span.is-on i {
+  background: #ff2222;
+  box-shadow:
+    0 0 22px #ff2222,
+    0 0 60px rgba(255, 34, 34, 0.45),
+    inset 0 -3px 6px rgba(0, 0, 0, 0.3);
+}
+
+.f1-lights-text {
+  margin: 0;
+  font-size: clamp(16px, 2.2vw, 24px);
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #c3c9d2;
+}
+
+/* Homepage entry point: a start-lights button in f1.h's own style. */
+.btn-f1 {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0.8rem 1.3rem;
+  border-radius: 999px;
+  border: 1px solid rgba(220, 38, 38, 0.55);
+  background: rgba(10, 11, 14, 0.92);
+  color: #f4f5f7;
+  transition:
+    border-color 0.25s ease,
+    box-shadow 0.25s ease;
+}
+
+.btn-f1,
+.btn-f1 * {
+  font-family: "Tektur", "Bahnschrift", system-ui, sans-serif;
+}
+
+.btn-f1:hover {
+  border-color: #ef4444;
+  box-shadow: 0 0 30px rgba(220, 38, 38, 0.35);
+}
+
+.btn-f1 .btn-f1-label {
+  font-weight: 700;
+  font-size: 0.9rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.btn-f1-lights {
+  display: inline-flex;
+  gap: 3px;
+}
+
+.btn-f1-lights i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #2a0c0c;
+}
+
+/* On hover the five lights come on in sequence, like a race start. */
+.btn-f1:hover .btn-f1-lights i,
+.btn-f1:focus-visible .btn-f1-lights i {
+  animation: f1h-lamp 1.4s steps(1) infinite;
+}
+
+.btn-f1-lights i:nth-child(2) {
+  animation-delay: 0.15s !important;
+}
+.btn-f1-lights i:nth-child(3) {
+  animation-delay: 0.3s !important;
+}
+.btn-f1-lights i:nth-child(4) {
+  animation-delay: 0.45s !important;
+}
+.btn-f1-lights i:nth-child(5) {
+  animation-delay: 0.6s !important;
+}
+
+.nav-link-f1 {
+  border: 1px dashed rgba(220, 38, 38, 0.6);
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.nav-link-f1 b {
+  color: #d61f36;
+  font-weight: 700;
+}
+
+@keyframes f1h-pulse {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+@keyframes f1h-lamp {
+  0% {
+    background: #2a0c0c;
+    box-shadow: none;
+  }
+  10%,
+  75% {
+    background: #ff2222;
+    box-shadow: 0 0 8px #ff2222;
+  }
+  76%,
+  100% {
+    background: #2a0c0c;
+    box-shadow: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .f1h-live i,
+  .btn-f1:hover .btn-f1-lights i {
+    animation: none;
+  }
+}

@@ -22,20 +22,20 @@ export const registerScrollTarget = (id, getY) => {
   return () => customTargets.delete(id);
 };
 
-export function scrollToId(id, { immediate = false } = {}) {
+// `onComplete` runs once the scroll has settled (a timer stands in for it when
+// native smooth scrolling is used, since that has no completion event).
+export function scrollToId(id, { immediate = false, duration = 1.6, onComplete } = {}) {
   const custom = customTargets.get(id);
-  if (custom) {
-    const y = custom();
-    if (lenisInstance) lenisInstance.scrollTo(y, { immediate, duration: 1.6, easing: expoOut });
-    else window.scrollTo({ top: y, behavior: immediate ? "auto" : "smooth" });
-    return;
-  }
-  const target = document.getElementById(id);
-  if (!target) return;
+  const target = custom ? null : document.getElementById(id);
+  if (!custom && !target) return;
+
   if (lenisInstance) {
-    lenisInstance.scrollTo(target, { offset: -NAV_OFFSET, immediate, duration: 1.6, easing: expoOut });
+    const dest = custom ? custom() : target;
+    const offset = custom ? 0 : -NAV_OFFSET;
+    lenisInstance.scrollTo(dest, { offset, immediate, duration, easing: expoOut, onComplete });
     return;
   }
-  const top = target.getBoundingClientRect().top + window.scrollY - NAV_OFFSET;
+  const top = custom ? custom() : target.getBoundingClientRect().top + window.scrollY - NAV_OFFSET;
   window.scrollTo({ top, behavior: immediate ? "auto" : "smooth" });
+  if (onComplete) window.setTimeout(onComplete, immediate ? 0 : 900);
 }

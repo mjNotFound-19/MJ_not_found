@@ -38,8 +38,8 @@ export const HERO = {
     },
     {
       label: "Race simulations",
-      value: "10,000",
-      meta: "Monte Carlo runs per race",
+      value: "4M",
+      meta: "Per Grand Prix, live on f1.h",
       projectId: "flat-out-f1",
     },
   ],
@@ -237,25 +237,29 @@ export const PROJECTS = [
   {
     id: "flat-out-f1",
     accent: "#FF8000",
-    title: "Flat Out F1 v2 - Race Prediction Pipeline",
-    tag: "Monte Carlo + ensembles",
+    title: "Flat Out F1 - Race Intelligence",
+    tag: "4M-race Monte Carlo + strategy",
     description:
-      "An end-to-end F1 race prediction pipeline: FastF1/OpenF1 ingestion, per-driver features from practice, qualifying, testing and historical profiles, and a blended ensemble checked with leave-one-out validation.",
+      "A lap-by-lap F1 race simulator that runs every Grand Prix 4,000,000 times: tyre wear, pit strategy, safety cars, overtakes and reliability. A pace model trained on real race laps feeds it, and every prediction is scored against the result in a walk-forward backtest.",
     highlights: [
-      "Ensemble of gradient boosting, random forest, extra trees, ridge, Bayesian ridge and SVR.",
-      "10,000-run Monte Carlo race simulator modeling DNF probability, grid effects, team/driver shocks and safety-car compression.",
-      "Outputs win/podium probabilities and P10/P50/P90 finish ranges through a Node.js dashboard.",
+      "Pace model learns fuel- and tyre-corrected race pace from 60 audited Grands Prix (2024-2026), with calibrated uncertainty.",
+      "Predicts tyre strategy and pit windows, plus car-adjusted driver and constructor ratings.",
+      "Beats the 'finish where you start' baseline by 12% on ranked probability score, retrained before every race.",
     ],
-    stack: ["Python", "scikit-learn", "PyTorch", "SciPy", "FastF1", "OpenF1", "Node.js"],
+    stack: ["Python", "NumPy", "LightGBM", "FastF1", "GSAP", "Playwright"],
     metrics: [
-      { label: "Race sims", value: "10k" },
-      { label: "Ensemble models", value: "6" },
-      { label: "Validation", value: "LOO" },
+      { label: "Sims per race", value: "4M" },
+      { label: "GPs audited", value: "60" },
+      { label: "vs grid baseline", value: "-12% error" },
     ],
     poster: "/assets/flatout-grid.svg",
+    // Rendered as a live miniature of f1.h (see F1ProjectCard).
+    summary:
+      "Every Grand Prix simulated 4,000,000 times, lap by lap, from a pace model trained on real race laps and scored against every result.",
+    repo: "https://github.com/mjNotFound-19/Flat_Out_F1_V2",
     cta: {
-      label: "View repo",
-      href: "https://github.com/mjNotFound-19/Flat_Out_F1_V2",
+      label: "Open f1.h",
+      href: "/f1/",
     },
   },
   {
@@ -357,6 +361,23 @@ export const SKILLS = {
     "IDS",
     "SIEM",
     "Network traffic analysis",
+  ],
+  // What this portfolio, its bucket list page and f1.h (manasjha.online/f1) are built with.
+  "Frontend, UI/UX & Motion": [
+    "React",
+    "Vite",
+    "Tailwind CSS",
+    "Framer Motion",
+    "GSAP (ScrollTrigger, SplitText)",
+    "Lenis smooth scroll",
+    "WebGL / GLSL shaders",
+    "Canvas 2D",
+    "SVG animation & data viz",
+    "Web Audio API",
+    "Responsive design",
+    "Accessibility & reduced motion",
+    "Design systems",
+    "Web performance",
   ],
 };
 
