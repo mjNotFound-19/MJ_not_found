@@ -727,9 +727,8 @@ function renderStrategy(root) {
     right.unshift(panel("Strategy options", "race time vs the fastest plan · tyre wear and pit loss only", toggle, table(plans, [
       { id: "p", label: "Plan", render: (x) => h("span", {}, tyres(x.plan), h("span", { class: "strat-txt" }, label(x.stops))) },
       { id: "d", label: "vs fastest", num: true, render: (x) => (x.delta_s === 0 ? h("span", { class: "badge good" }, "fastest") : h("span", { class: "mono" }, `+${fx(x.delta_s, 1)}s`)) },
-      { id: "w", label: "Pit window", render: (x) => h("span", { class: "mono muted", "data-tip": `stop laps if run as planned: ${x.stop_laps.join(", ")}; window = first stop within 1 s of this plan's best` },
-        x.window ? `L${x.window[0]}-${x.window[1]}` : "-") },
-      { id: "b", label: "Box", num: true, render: (x) => h("span", { class: "mono" }, x.box ? `L${x.box}` : "-") }]),
+      { id: "w", label: "Pit window", render: (x) => h("span", { class: "mono", style: "display:grid;gap:2px;line-height:1.15", "data-tip": `stop laps if run as planned: ${x.stop_laps.join(", ")}; window = first stop within 1 s of this plan's best` },
+        x.window ? `L${x.window[0]}-${x.window[1]}` : "-", x.box ? h("small", { class: "muted" }, `box L${x.box}`) : null) }]),
       h("p", { class: "sub" }, (() => {
         const other = plans.find((x) => x.stops !== best.stops);
         return other ? `${label(best.stops)} is fastest; ${label(other.stops)} costs about ${fx(other.delta_s, 1)} s over the race. ` +
