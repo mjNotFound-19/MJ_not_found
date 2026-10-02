@@ -714,6 +714,42 @@ function renderStrategy(root) {
       h("span", { class: "strat-txt", style: "margin:0", "data-tip": `this exact compound order: ${pct(d.strategy_p)}` }, `${k}-stop · ${pct([null, d.stop1, d.stop2, d.stop3p][k])}`)));
   }
   const right = [panel("The strategy call", null, why)];
+  const T = nx.meta.tyres || {};
+  const fpView = !!(T.plans_practice && state.stratView === "practice");
+  const plans = (fpView ? T.plans_practice : T.plans)?.filter((x, i, all) => all.findIndex((y) => y.stops === x.stops) === i),   // one row per stop count
+    dyn = fpView ? T.dynamics_practice : T.dynamics;
+  if (plans?.length) {
+    // every plan's race time against the fastest one, from the tyre-wear model (no traffic, no safety car)
+    const best = plans[0], label = (n) => `${n}-stop`, W = T.practice_wear;
+    const toggle = T.plans_practice ? h("div", { class: "seg", role: "group", "aria-label": "Tyre wear used" },
+      [["model", "Model"], ["practice", "If practice wear holds"]].map(([k, l]) => h("button", { type: "button", class: (k === "practice") === fpView ? "on" : "", "aria-pressed": String((k === "practice") === fpView),
+        onclick: () => { state.stratView = k; rerender(); } }, l))) : null;
+    right.unshift(panel("Strategy options", "race time vs the fastest plan · tyre wear and pit loss only", toggle, table(plans, [
+      { id: "p", label: "Plan", render: (x) => h("span", {}, tyres(x.plan), h("span", { class: "strat-txt" }, label(x.stops))) },
+      { id: "d", label: "vs fastest", num: true, render: (x) => (x.delta_s === 0 ? h("span", { class: "badge good" }, "fastest") : h("span", { class: "mono" }, `+${fx(x.delta_s, 1)}s`)) },
+      { id: "w", label: "Pit window", render: (x) => h("span", { class: "mono muted", "data-tip": `stop laps if run as planned: ${x.stop_laps.join(", ")}; window = first stop within 1 s of this plan's best` },
+        x.window ? `L${x.window[0]}-${x.window[1]}` : "-") },
+      { id: "b", label: "Box", num: true, render: (x) => h("span", { class: "mono" }, x.box ? `L${x.box}` : "-") }]),
+      h("p", { class: "sub" }, (() => {
+        const other = plans.find((x) => x.stops !== best.stops);
+        return other ? `${label(best.stops)} is fastest; ${label(other.stops)} costs about ${fx(other.delta_s, 1)} s over the race. ` +
+          (other.stops > best.stops ? "It is the aggressive option: more stops, fresher tyres, more track position to win back." : "It is the conservative option: fewer stops, longer stints, more tyre management.") : "";
+      })()),
+      W?.estimate ? h("p", { class: "sub" }, fpView
+        ? `Practice long runs (${W.n_stints}) say tyres wear faster here: ` + Object.entries(W.estimate).map(([k, v]) => `${k[0]} ${fx(v * 1000, 0)}`).join(" · ") +
+          " ms/lap² against the model's " + Object.entries(W.prior).map(([k, v]) => `${k[0]} ${fx(v * 1000, 0)}`).join(" · ") +
+          ". Practice wear has not yet proved more accurate than the model in testing (it is ahead on average but within noise), so the race predictions use the model."
+        : "No race here in our data, so tyre wear is a pooled estimate. Switch to the practice view to see the plans if this weekend's long runs are right.") : null));
+  }
+  if (dyn) {
+    const y = dyn, cls = y.kind === "undercut" ? "good" : y.kind === "overcut" ? "bad" : "";
+    right.splice(1, 0, panel("Undercut or overcut?", `first flying lap on new tyres vs one more lap on the old set at lap ${y.at_lap}`,
+      h("div", { class: "grid g-2" },
+        stat(`${y.gain_s >= 0 ? "+" : ""}${fx(y.gain_s, 2)}<small>s</small>`, y.kind === "undercut" ? "Undercut track" : y.kind === "overcut" ? "Overcut track" : "Neutral", "gain for the car that stops first", cls === "good" ? "cyan" : cls === "bad" ? "accent" : ""),
+        stat(`${y.warm_s >= 0 ? "+" : ""}${fx(y.warm_s, 2)}<small>s</small>`, "Tyre warm-up", y.n_stints ? `first lap on new tyres vs trend · ${y.n_stints} stops here` : "pooled from every circuit (no race here yet)", "")),
+      h("p", { class: "explain" }, y.note, ` The old tyre has lost about ${fx(y.wear_s, 1)} s/lap by lap ${y.at_lap}; the new one is ${y.warm_s <= 0 ? "up to speed at once" : `${fx(y.warm_s, 2)} s off on its first lap`}. `,
+        y.kind === "undercut" ? "Plans box at the start of their window." : y.kind === "overcut" ? "Plans box at the end of their window." : "Plans box mid-window.")));
+  }
   if (nerd()) {
     right.push(panel("Degradation model", "lap-time loss vs tyre age · dashed = 97th-pct stint length", h("div", { html: degChart(c) }),
       h("div", { class: "legend" }, ["SOFT", "MEDIUM", "HARD"].map((k) => h("span", {}, h("i", { style: `background:${COMP_COLOR[k]}` }), `${k} ${fx(c.deg?.[k] * 1000, 0)} ms/lap · max ~${c.max_stint?.[k] ?? "?"}`)))));
