@@ -922,11 +922,114 @@ function dvcDetail(all, q) {
 
 /* ------------------------------------------------------------------ TEAMS */
 const TEAM_AXES = [["s_race", "Race pace"], ["s_quali", "Quali pace"], ["s_reliability", "Reliability"], ["s_execution", "Execution"], ["s_development", "Development"], ["s_pit", "Pit work"]];
+/* garage: stylised 3D car per team; changing team explodes it and reassembles it in the next livery */
+const CAR_ICON = {
+  prev: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2"/></svg>',
+  next: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2"/></svg>',
+  pause: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14M16 5v14" fill="none" stroke="currentColor" stroke-width="2.4"/></svg>',
+  play: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5l12 7-12 7z" fill="currentColor"/></svg>',
+  sound: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M16 9a4 4 0 010 6M18.5 6.5a7.5 7.5 0 010 11" fill="none" stroke="currentColor" stroke-width="2"/></svg>',
+  muted: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M16 9l6 6M22 9l-6 6" fill="none" stroke="currentColor" stroke-width="2"/></svg>',
+};
+function garageEl(T) {
+  if (state.car3) { state.car3.dispose(); state.car3 = null; }
+  const S = state.data.standings?.drivers || [];
+  // drivers come from the standings (current team, points order); numbers from the project's driver data
+  const teams = T.map((t) => {
+    const ds = S.filter((d) => d.Team === t.Team).slice(0, 2);
+    return { team: t.Team, label: SHORT[t.Team] || t.Team, color: teamColor(t.Team), t, ds,
+             drivers: ds.map((d) => ({ code: d.Driver, name: name(d.Driver), number: person(d.Driver).number ?? "" })), driver: 0 };
+  });
+  let i = Math.max(0, teams.findIndex((x) => x.team === state.garageTeam));
+  let ctrl = null, playing = !reduced();
+  const idxV = h("span", { "data-scramble": "" }), nameV = h("h2", { id: "car3-title" }), dl = h("dl", { class: "c3-tr" }), drv = h("div", { class: "car3-drivers", role: "group", "aria-label": "Car shown" });
+  const logoBox = h("div", { class: "c3-fallback car3-logo" });
+  const status = h("span", { class: "car3-status", role: "status" });
+  const playBtn = h("button", { type: "button", class: "car3-btn", onclick: () => { playing = !playing; ctrl?.setAuto(playing); syncPlay(); } });
+  const syncPlay = () => { playBtn.innerHTML = playing ? CAR_ICON.pause : CAR_ICON.play; playBtn.setAttribute("aria-label", playing ? "Pause the car rotation" : "Cycle through the cars"); };
+  syncPlay();
+  // wheel-gun sound during the transition (garage3d's wheelgun.js; the choice is remembered)
+  const soundBtn = h("button", { type: "button", class: "car3-btn", hidden: true, onclick: () => { ctrl?.sound.setMuted(!ctrl.sound.muted); syncSound(); } });
+  const syncSound = () => { const m = !ctrl || ctrl.sound.muted; soundBtn.innerHTML = m ? CAR_ICON.muted : CAR_ICON.sound; soundBtn.setAttribute("aria-label", m ? "Turn on the wheel-gun sound" : "Mute the wheel-gun sound"); soundBtn.setAttribute("aria-pressed", String(!m)); };
+  const go = (j) => { j = (j + teams.length) % teams.length; if (ctrl) ctrl.go(j); else update(j); };
+  const strip = h("div", { class: "car3-strip", role: "group", "aria-label": "Choose a car" }, teams.map((x, j) => h("button", {
+    type: "button", class: "pill-toggle", style: `--team:${x.color}`, "aria-pressed": "false", onclick: () => go(j),
+  }, teamLogo(x.team, 18) || h("i"), x.label)));
+  const el = h("section", { class: "c3 car3", "aria-labelledby": "car3-title" },
+    logoBox,
+    h("div", { class: "c3-hud" },
+      h("div", { class: "c3-tl" }, idxV, nameV),
+      dl,
+      h("div", { class: "c3-bl" }, drv, h("p", {}, nerd()
+        ? "Generated 3D model (tools/cars): parametric surfaces and a baked PBR livery read off each team's reference art. Not team CAD; the power unit, radiators and gearbox are reconstructed. Sponsor names are plain wordmarks."
+        : "A 3D model in each team's livery, built for this site rather than taken from the real car. Watch it come apart and rebuild as the next team's car.")),
+      h("div", { class: "c3-br car3-ctl" },
+        status,
+        h("div", { class: "car3-btns" },
+          h("button", { type: "button", class: "car3-btn", "aria-label": "Previous car", html: CAR_ICON.prev, onclick: () => go((ctrl ? ctrl.index : i) - 1) }),
+          reduced() ? null : playBtn,
+          h("button", { type: "button", class: "car3-btn", "aria-label": "Next car", html: CAR_ICON.next, onclick: () => go((ctrl ? ctrl.index : i) + 1) }),
+          reduced() ? null : soundBtn),
+        h("span", { class: "c3-hint" }, "Drag to rotate"))));
+  function drivers(j) {
+    const x = teams[j];
+    const fixed = ctrl?.fixedNumber?.(j);
+    if (fixed) x.driver = Math.max(0, x.drivers.findIndex((d) => String(d.number) === String(fixed)));
+    drv.replaceChildren(...x.drivers.map((d, k) => {
+      const locked = fixed && String(d.number) !== String(fixed);
+      return h("button", {
+        type: "button", class: "car3-drv", "aria-pressed": String(k === x.driver), "aria-disabled": locked ? "true" : null,
+        title: locked ? `This model's livery carries #${fixed}; #${d.number} isn't available` : `Show ${d.name}'s car (#${d.number})`,
+        onclick: () => { if (locked) return; x.driver = k; ctrl?.setDriver(j, d.number); drivers(j); },
+      }, h("b", {}, `#${d.number}`), " ", d.name);
+    }));
+  }
+  function update(j) {
+    i = j; const x = teams[j], t = x.t;
+    state.garageTeam = x.team;
+    el.style.setProperty("--team", x.color);
+    idxV.textContent = `GARAGE_${String(j + 1).padStart(2, "0")} / ${String(teams.length).padStart(2, "0")}`;
+    nameV.replaceChildren(x.team);
+    dl.replaceChildren(...[["Rating", fx(t.overall, 0)], ["Wins", t.wins], ["Podiums", t.podiums], ["Finish rate", pct(t.reliability)]]
+      .map(([k, v]) => h("div", {}, h("dt", {}, k), h("dd", {}, String(v)))));
+    drivers(j);
+    logoBox.replaceChildren(teamLogo(x.team, 96) || h("b", {}, x.label));
+    strip.querySelectorAll("button").forEach((b, k) => b.setAttribute("aria-pressed", String(k === j)));
+  }
+  update(i);
+  const io = new IntersectionObserver(([e]) => {
+    if (!e.isIntersecting) return;
+    io.disconnect();
+    el.classList.add("loading");
+    import("./garage3d.js").then((mod) => mod.mount(el, {
+      teams: teams.map((x) => ({ team: x.team, label: x.label, color: x.color, drivers: x.drivers, driver: x.driver })),
+      manifestUrl: "assets/cars/manifest.json", start: i, auto: playing, onChange: update,
+      onState: (st) => { el.classList.toggle("loading", !!st.loading); status.textContent = st.error ? "Could not load that car" : st.loading ? "Loading car…" : ""; if (st.error) setTimeout(() => { if (status.textContent.startsWith("Could")) status.textContent = ""; }, 4000); },
+    }))
+      .then((c) => { ctrl = c; state.car3 = c; el.classList.remove("loading"); el.classList.add("live"); update(c.index); showCredits(c.credits); if (c.sound) { soundBtn.hidden = false; syncSound(); } })
+      .catch((err) => { el.classList.remove("loading"); el.classList.add("flat"); console.info("3D car unavailable, showing the team badge:", err.message); });
+  }, { rootMargin: "300px 0px" });
+  io.observe(el);
+  // CC BY attribution for every source model, from the asset manifest (filled once the garage loads)
+  const credit = h("p", { class: "car3-credit" });
+  const showCredits = (list) => {
+    if (!list?.length) return;
+    const items = list.flatMap((c, k) => [k ? (k === list.length - 1 ? " and " : ", ") : "",
+      h("a", { href: c.url, target: "_blank", rel: "noopener" }, `“${c.title}”`), ` by ${c.author}`]);
+    credit.replaceChildren("3D models: ", ...items, ", ", h("a", { href: list[0].licence_url, target: "_blank", rel: "noopener" }, "CC BY 4.0"),
+      ". Split into parts and adapted for this site (", h("a", { href: "https://github.com/mjNotFound-19/Flat_Out_F1_V2/blob/main/tools/cars/SOURCES.md", target: "_blank", rel: "noopener" }, "list of changes"),
+      "); not endorsed by the authors. Logos shown are trademarks of their owners.");
+  };
+  return h("div", { class: "car3-wrap" }, el, strip, credit);
+}
+
 function renderTeams(root) {
   const T = state.data.constructors || [];
   if (!T.length) return root.append(h("div", { class: "empty" }, "No constructor data yet."));
   const drivers = (team) => (state.data.standings.drivers || []).filter((d) => d.Team === team).slice(0, 2);
   root.append(sectionHead(["Rating ", em("the cars")], "Each car's pace with the drivers taken out, plus reliability, conversion of pace into results, pit work and in-season development. 50 is an average team."));
+  // the 3D garage is a work in progress: published builds switch it off (web/scripts/publish-portfolio.sh)
+  if (document.querySelector('meta[name="f1h-garage"]')?.content !== "off") root.append(garageEl(T));
   const cards = stagger(h("div", { class: "stack" }, T.map((t, i) => h("div", { class: "teamcard", style: `--team:${teamColor(t.Team)}` },
     h("div", { class: "rank" }, i + 1),
     h("div", {}, h("div", { class: "tname" }, teamLogo(t.Team, 26), t.Team), h("div", { class: "tdrivers" }, drivers(t.Team).map((d) => h("button", { type: "button", class: "chipbtn", onclick: () => openDriver(d.Driver) }, avatar(d.Driver, 26, t.Team), d.Driver)),
@@ -1193,7 +1296,10 @@ async function init() {
   document.body.dataset.mode = state.mode;
   document.querySelectorAll(".mode-switch button").forEach((b) => b.setAttribute("aria-checked", String(b.dataset.mode === state.mode)));
   $("#footer").append(h("span", {}, `Data refreshed ${new Date(state.data.generated).toLocaleString()} · season ${state.data.season} · photos & logos © Formula 1 / teams, flags flagcdn.com`),
-    h("span", {}, h("a", { href: "https://manasjha.online/" }, "← Back to manasjha.online"), " · Refresh with ", h("code", {}, "python -m flatout weekend"), " · ", h("a", { href: "legacy/" }, "v2 dashboard")));
+    h("span", {}, h("a", { href: "https://manasjha.online/" }, "← Back to manasjha.online"), " · Refresh with ", h("code", {}, "python -m flatout weekend"), " · ", h("a", { href: "legacy/" }, "v2 dashboard")),
+    h("span", { class: "disclaimer" }, "Unofficial, non-commercial fan project. Not affiliated with, endorsed or sponsored by Formula 1, the FIA, any team, driver or sponsor. "
+      + "F1, team, sponsor and supplier names and logos are trademarks of their owners and appear only to identify the teams. "
+      + "3D car models are third-party works under CC BY 4.0, credited on the Teams page."));
   window.addEventListener("hashchange", route);
   state.tab = null;
   route();
