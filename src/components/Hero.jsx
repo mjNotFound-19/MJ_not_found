@@ -165,9 +165,9 @@ export default function Hero() {
           </motion.div>
         </div>
 
-        <div className="mt-10 lg:mt-0 grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(340px,440px)] items-end">
+        <div className="mt-12 lg:mt-16 grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(340px,440px)] items-end">
           <motion.div
-            className="grid grid-cols-2 gap-3 sm:gap-4"
+            className="stat-grid"
             variants={staggerChildren(0.08)}
             initial="hidden"
             animate="show"
@@ -205,7 +205,7 @@ export default function Hero() {
           </motion.div>
           <motion.div
             style={{ y: terminalShift }}
-            className="terminal-window relative z-10 lg:-mt-48"
+            className="terminal-window relative z-10 lg:-mt-60"
             initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.9, delay: 0.3, ease: "easeOut" }}

@@ -9,7 +9,9 @@ const VARIANTS = 3; // glyph layers cycled while revealed, so the code shimmers
 const SWAP_MS = 110;
 const RADIUS = 92; // css px, reveal brush radius
 const TRAIL_LIFE = 0.85; // seconds for a trail blob to fade out
-const INTRO_MS = 1700;
+const ASSEMBLE = 1.8; // seconds: bits fly in and lock into place
+const RESOLVE = 1.0; // seconds: the photo streams in, coarse blocks to sharp
+const PIXEL_STEPS = [22, 12, 6, 3, 1]; // block sizes (css px) as the photo resolves
 const SCAN_EVERY_MS = 6500; // touch screens: periodic scan instead of a cursor
 
 // The photo rebuilt as rain glyphs: one glyph per cell, brightness from the
@@ -38,6 +40,7 @@ function buildGlyphLayers(img, w, h, dpr) {
   const span = Math.max(0.05, hi - lo);
 
   const layers = [];
+  const cells = []; // the first layer's glyphs, where the intro's bits land
   for (let v = 0; v < VARIANTS; v += 1) {
     const canvas = document.createElement("canvas");
     canvas.width = Math.round(w * dpr);
@@ -64,16 +67,58 @@ function buildGlyphLayers(img, w, h, dpr) {
         const i = y * cols + x;
         if (data[i * 4 + 3] < 90) continue;
         const t = Math.min(1, Math.max(0, (lum[i] - lo) / span));
-        ctx.fillStyle =
-          t > 0.86
-            ? "rgba(225,250,255,0.95)"
-            : `rgba(0,174,239,${(0.2 + 0.8 * Math.pow(t, 0.8)).toFixed(2)})`;
-        ctx.fillText(randomGlyph(), x * cell + cell / 2, y * cell + cell / 2);
+        const bright = t > 0.86;
+        const a = bright ? 0.95 : 0.2 + 0.8 * Math.pow(t, 0.8);
+        const ch = randomGlyph();
+        const cx = x * cell + cell / 2;
+        const cy = y * cell + cell / 2;
+        ctx.fillStyle = bright ? `rgba(225,250,255,${a})` : `rgba(0,174,239,${a.toFixed(2)})`;
+        ctx.fillText(ch, cx, cy);
+        if (v === 0) cells.push({ x: cx, y: cy, ch, a, bright });
       }
     }
     layers.push(canvas);
   }
-  return layers;
+  return { layers, cells, cell };
+}
+
+// Every glyph pre-drawn once, in rain cyan (row 0) and bright white-cyan
+// (row 1), so thousands of flying bits per frame are cheap image blits.
+function buildAtlas(cell, dpr) {
+  const slot = Math.ceil((cell + 3) * dpr);
+  const atlas = document.createElement("canvas");
+  atlas.width = slot * GLYPHS.length;
+  atlas.height = slot * 2;
+  const ctx = atlas.getContext("2d");
+  ctx.scale(dpr, dpr);
+  ctx.font = `${cell + 1}px "JetBrains Mono", monospace`;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  const s = slot / dpr;
+  ["rgb(0,174,239)", "rgb(225,250,255)"].forEach((color, row) => {
+    ctx.fillStyle = color;
+    [...GLYPHS].forEach((ch, i) => ctx.fillText(ch, i * s + s / 2, row * s + s / 2));
+  });
+  const index = new Map([...GLYPHS].map((ch, i) => [ch, i]));
+  return { atlas, slot, index };
+}
+
+// Each glyph cell becomes a bit that flies in from somewhere around the
+// portrait (some fall from above, like the rain) and locks into its cell.
+function makeParticles(cells, h) {
+  return cells.map((c) => {
+    const fromAbove = Math.random() < 0.3;
+    const angle = Math.random() * Math.PI * 2;
+    const dist = 90 + Math.random() * 320;
+    return {
+      ...c,
+      sx: fromAbove ? c.x + (Math.random() - 0.5) * 24 : c.x + Math.cos(angle) * dist,
+      sy: fromAbove ? c.y - 220 - Math.random() * 480 : c.y + Math.sin(angle) * dist,
+      delay: Math.random() * 0.55 + (c.y / h) * 0.35,
+      dur: 0.5 + Math.random() * 0.4,
+      seed: Math.floor(Math.random() * 1000),
+    };
+  });
 }
 
 // A soft round brush, drawn once and stamped into the mask.
@@ -120,6 +165,10 @@ export default function DecodePortrait() {
     let h = 0;
     let dpr = 1;
     let layers = [];
+    let glyphAtlas = null;
+    let particles = [];
+    const pix = document.createElement("canvas");
+    const pctx = pix.getContext("2d");
     let layerIdx = 0;
     let lastSwap = 0;
     let blobs = [];
@@ -142,8 +191,78 @@ export default function DecodePortrait() {
       canvas.height = comp.height = Math.round(h * dpr);
       mask.width = Math.ceil(w / 2);
       mask.height = Math.ceil(h / 2);
-      if (!reduce) layers = buildGlyphLayers(img, w, h, dpr);
+      if (!reduce) {
+        const built = buildGlyphLayers(img, w, h, dpr);
+        layers = built.layers;
+        if (intro) {
+          glyphAtlas = buildAtlas(built.cell, dpr);
+          particles = makeParticles(built.cells, h);
+        }
+      }
     };
+
+    function drawIntro(t, now) {
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.imageSmoothingEnabled = true;
+
+      if (t < ASSEMBLE) {
+        // Near the end, the finished glyph layer fades in under the last bits.
+        const settle = Math.min(1, Math.max(0, (t - (ASSEMBLE - 0.4)) / 0.4));
+        if (settle > 0) {
+          ctx.globalAlpha = settle;
+          ctx.drawImage(layers[0], 0, 0);
+        }
+        const { atlas, slot, index } = glyphAtlas;
+        const flip = Math.floor(now / 70);
+        for (let i = 0; i < particles.length; i += 1) {
+          const p = particles[i];
+          const lt = (t - p.delay) / p.dur;
+          if (lt <= 0) continue;
+          let x = p.x;
+          let y = p.y;
+          let gi;
+          let row;
+          let alpha;
+          if (lt < 1) {
+            const e = 1 - Math.pow(1 - lt, 3);
+            x = p.sx + (p.x - p.sx) * e;
+            y = p.sy + (p.y - p.sy) * e;
+            gi = index.get((flip + p.seed) % 2 ? "1" : "0");
+            row = 1;
+            alpha = 0.25 + 0.6 * e;
+          } else {
+            if (settle >= 1) continue;
+            gi = index.get(p.ch);
+            row = p.bright ? 1 : 0;
+            alpha = p.a * (1 - settle);
+          }
+          ctx.globalAlpha = alpha;
+          ctx.drawImage(atlas, gi * slot, row * slot, slot, slot, x * dpr - slot / 2, y * dpr - slot / 2, slot, slot);
+        }
+        ctx.globalAlpha = 1;
+        return;
+      }
+
+      // Resolve: the photo arrives in coarse blocks that sharpen step by step,
+      // like a progressive download, while the code fades off it.
+      const p = Math.min(1, (t - ASSEMBLE) / RESOLVE);
+      const block = PIXEL_STEPS[Math.min(PIXEL_STEPS.length - 1, Math.floor(p * PIXEL_STEPS.length))];
+      ctx.globalAlpha = Math.min(1, p * 2.2);
+      if (block > 1) {
+        pix.width = Math.max(1, Math.ceil(w / block));
+        pix.height = Math.max(1, Math.ceil(h / block));
+        pctx.drawImage(img, 0, 0, pix.width, pix.height);
+        ctx.imageSmoothingEnabled = false;
+        ctx.drawImage(pix, 0, 0, canvas.width, canvas.height);
+        ctx.imageSmoothingEnabled = true;
+      } else {
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      }
+      ctx.globalAlpha = Math.pow(1 - p, 1.4);
+      ctx.drawImage(layers[0], 0, 0);
+      ctx.globalAlpha = 1;
+    }
 
     function frame(now) {
       raf = 0;
@@ -155,23 +274,18 @@ export default function DecodePortrait() {
 
       mctx.clearRect(0, 0, mask.width, mask.height);
 
-      // Intro: glyphs below a line that sweeps down, photo above it.
+      // Intro: bits assemble into the glyph portrait, then the photo streams in.
       if (intro) {
         if (intro.start === null) intro.start = now;
-        const p = (now - intro.start) / INTRO_MS;
-        if (p >= 1) {
-          intro = null;
-        } else {
-          active = true;
-          const edge = 120;
-          const eased = 1 - Math.pow(1 - p, 3);
-          lineY = -edge + eased * (h + edge * 2);
-          const g = mctx.createLinearGradient(0, (lineY - edge) * k, 0, lineY * k);
-          g.addColorStop(0, "rgba(255,255,255,0)");
-          g.addColorStop(1, "rgba(255,255,255,1)");
-          mctx.fillStyle = g;
-          mctx.fillRect(0, 0, mask.width, mask.height);
+        const t = (now - intro.start) / 1000;
+        if (t < ASSEMBLE + RESOLVE && layers.length && glyphAtlas) {
+          drawIntro(t, now);
+          raf = requestAnimationFrame(frame);
+          return;
         }
+        intro = null;
+        particles = [];
+        glyphAtlas = null;
       }
 
       // Touch screens: a decode band passes over now and then.

@@ -2339,3 +2339,27 @@ button.stat-card:hover {
     display: none;
   }
 }
+
+/* Hero stats as one spec sheet: a single panel split by hairlines. */
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.09);
+  overflow: hidden;
+}
+
+.stat-grid .stat-card {
+  border: 0;
+  border-radius: 0;
+  background: rgba(2, 5, 16, 0.9);
+  padding: 1.3rem 1.5rem 1.35rem;
+}
+
+/* Cells are joined, so no lift on hover: just light the cell. */
+.stat-grid button.stat-card:hover {
+  background: rgb(4, 16, 32);
+  transform: none;
+}
