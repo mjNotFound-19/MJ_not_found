@@ -10,6 +10,9 @@ import { useLanguage } from "../context/LanguageContext";
 import { scrollToId } from "../lib/scroll";
 import RollText from "./motion/RollText";
 import { F1_SITE } from "../lib/f1Data";
+import DecodePortrait from "./DecodePortrait";
+import EffectBoundary from "./EffectBoundary";
+import portraitSrc from "../assets/portrait/manas.webp";
 
 export default function Hero() {
   const { t } = useLanguage();
@@ -19,6 +22,8 @@ export default function Hero() {
     offset: ["start start", "end start"],
   });
   const panelShift = useTransform(scrollYProgress, [0, 1], [0, -60]);
+  // The terminal drifts faster than the portrait, so it slides over the jacket.
+  const terminalShift = useTransform(scrollYProgress, [0, 1], [0, -130]);
   const glowShift = useTransform(scrollYProgress, [0, 1], [0, -160]);
   // As the next section slides over, the hero recedes: scale down, dim, drift up.
   const heroScale = useTransform(scrollYProgress, [0.3, 1], [1, 0.92]);
@@ -42,7 +47,7 @@ export default function Hero() {
         className="section-shell relative z-10 pt-32 pb-20 origin-top"
         style={{ scale: heroScale, opacity: heroOpacity, y: heroY }}
       >
-        <div className="grid gap-12 lg:grid-cols-[minmax(0,1fr)_400px] items-center">
+        <div className="grid gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(340px,440px)] items-center">
           <div className="on-rain">
             <motion.span
               className="mono-chip"
@@ -148,7 +153,59 @@ export default function Hero() {
 
           <motion.div
             style={{ y: panelShift }}
-            className="terminal-window"
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.9, delay: 0.2, ease: "easeOut" }}
+          >
+            <EffectBoundary
+              fallback={<img src={portraitSrc} alt="Portrait of Manas Jha" className="mx-auto w-full max-w-[440px]" />}
+            >
+              <DecodePortrait />
+            </EffectBoundary>
+          </motion.div>
+        </div>
+
+        <div className="mt-10 lg:mt-0 grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(340px,440px)] items-end">
+          <motion.div
+            className="grid grid-cols-2 gap-3 sm:gap-4"
+            variants={staggerChildren(0.08)}
+            initial="hidden"
+            animate="show"
+          >
+            {HERO.stats.map((stat, index) => {
+              const content = (
+                <>
+                  <p className="stat-value">{stat.value}</p>
+                  <p className="text-sm text-white/75 mt-1">{stat.label}</p>
+                  <p className="text-xs text-white/45 mt-1">{stat.meta}</p>
+                </>
+              );
+              return (
+                <motion.div key={stat.label} variants={fadeUp(index * 0.04, 18)}>
+                  {stat.projectId ? (
+                    <button
+                      type="button"
+                      onClick={() => scrollToId(`project-${stat.projectId}`)}
+                      className="stat-card group w-full text-left"
+                      aria-label={`${stat.value} ${stat.label}, view project`}
+                    >
+                      {content}
+                      <ArrowUpRight
+                        size={14}
+                        className="absolute top-4 right-4 text-white/30 group-hover:text-primary transition-colors"
+                        aria-hidden
+                      />
+                    </button>
+                  ) : (
+                    <div className="stat-card">{content}</div>
+                  )}
+                </motion.div>
+              );
+            })}
+          </motion.div>
+          <motion.div
+            style={{ y: terminalShift }}
+            className="terminal-window relative z-10 lg:-mt-48"
             initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.9, delay: 0.3, ease: "easeOut" }}
@@ -194,44 +251,6 @@ export default function Hero() {
             </div>
           </motion.div>
         </div>
-
-        <motion.div
-          className="mt-16 grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4"
-          variants={staggerChildren(0.08)}
-          initial="hidden"
-          animate="show"
-        >
-          {HERO.stats.map((stat, index) => {
-            const content = (
-              <>
-                <p className="stat-value">{stat.value}</p>
-                <p className="text-sm text-white/75 mt-1">{stat.label}</p>
-                <p className="text-xs text-white/45 mt-1">{stat.meta}</p>
-              </>
-            );
-            return (
-              <motion.div key={stat.label} variants={fadeUp(index * 0.04, 18)}>
-                {stat.projectId ? (
-                  <button
-                    type="button"
-                    onClick={() => scrollToId(`project-${stat.projectId}`)}
-                    className="stat-card group w-full text-left"
-                    aria-label={`${stat.value} ${stat.label}, view project`}
-                  >
-                    {content}
-                    <ArrowUpRight
-                      size={14}
-                      className="absolute top-4 right-4 text-white/30 group-hover:text-primary transition-colors"
-                      aria-hidden
-                    />
-                  </button>
-                ) : (
-                  <div className="stat-card">{content}</div>
-                )}
-              </motion.div>
-            );
-          })}
-        </motion.div>
       </motion.div>
     </section>
   );

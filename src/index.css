@@ -2245,3 +2245,97 @@ button.stat-card:hover {
 .f1-leave-logo {
   font-size: clamp(3rem, 12vw, 9rem);
 }
+
+/* ---------- Decode portrait (hero, after landonorris.com) ---------- */
+
+.decode-portrait {
+  position: relative;
+  width: 100%;
+  max-width: 440px;
+  margin-inline: auto;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+}
+
+.decode-portrait.is-ready {
+  opacity: 1;
+}
+
+.decode-portrait-canvas {
+  position: relative;
+  display: block;
+  width: 100%;
+  aspect-ratio: 900 / 1125;
+  /* Dissolve the jacket into the page instead of ending on a hard edge. */
+  -webkit-mask-image: linear-gradient(to bottom, #000 62%, transparent 98%);
+  mask-image: linear-gradient(to bottom, #000 62%, transparent 98%);
+}
+
+.decode-portrait-glow {
+  position: absolute;
+  left: 50%;
+  top: 30%;
+  width: 115%;
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(0, 174, 239, 0.22), rgba(0, 174, 239, 0.06) 45%, transparent 68%);
+  pointer-events: none;
+}
+
+.decode-portrait-tag {
+  position: absolute;
+  top: 0.25rem;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  color: rgba(0, 174, 239, 0.85);
+  pointer-events: none;
+}
+
+.decode-portrait-tag.is-tl {
+  left: 0.9rem;
+}
+
+.decode-portrait-tag.is-tr {
+  right: 0.9rem;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.decode-portrait-hint-touch {
+  display: none;
+}
+
+@media (hover: none) {
+  .decode-portrait-hint-fine {
+    display: none;
+  }
+  .decode-portrait-hint-touch {
+    display: inline;
+  }
+}
+
+.decode-portrait-corner {
+  position: absolute;
+  top: -0.5rem;
+  width: 22px;
+  height: 22px;
+  border-top: 1px solid rgba(0, 174, 239, 0.6);
+  pointer-events: none;
+}
+
+.decode-portrait-corner.is-tl {
+  left: 0;
+  border-left: 1px solid rgba(0, 174, 239, 0.6);
+}
+
+.decode-portrait-corner.is-tr {
+  right: 0;
+  border-right: 1px solid rgba(0, 174, 239, 0.6);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .decode-portrait-tag.is-tr {
+    display: none;
+  }
+}
