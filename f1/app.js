@@ -276,7 +276,10 @@ function renderRace(root) {
   const nx = state.data.next;
   if (!nx) { root.append(h("div", { class: "empty" }, "No prediction yet. Run python -m flatout predict to create one.")); return; }
   const m = nx.meta, c = nx.circuit, D = nx.drivers;
-  const byWin = D.slice().sort((a, b) => b.win - a.win);
+  // favourite, podium and win list can show the forecast from before the latest session (toggle in the hero)
+  const prevF = nx.previous?.drivers?.length && SESSION_OF[m.mode] ? nx.previous : null;
+  const before = !!prevF && state.raceView === "before";
+  const byWin = (before ? prevF.drivers : D).slice().sort((a, b) => b.win - a.win);
   const date = m.date ? new Date(m.date + "T12:00:00") : null;
 
   const fav = byWin[0];
@@ -287,12 +290,16 @@ function renderRace(root) {
       titleEl(m.event),
       venueEl(m),
       h("div", { class: "chips" },
-        h("span", { class: "chip red" }, MODE_LABEL[m.mode] || m.mode),
+        h("span", { class: "chip red" }, before ? beforeLabel(m.mode) : MODE_LABEL[m.mode] || m.mode),
         h("span", { class: "chip", html: `${ICON.sims}${Number(m.n_sims).toLocaleString()} races simulated` }),
         h("span", { class: "chip", html: `${ICON.sc}Safety car ${pct(m.p_sc)}` }),
         nerd() ? h("span", { class: "chip", html: `${ICON.cpu}${fx(m.sim_seconds, 0)} s compute` }) : null,
         nerd() ? h("span", { class: "chip" }, `grid ${m.grid_known ? "known" : "simulated"}`) : null,
         m.status === "provisional" ? h("span", { class: "chip warn", "data-tip": "First race at this circuit in the model's data: circuit behaviour comes from pooled priors" }, "Provisional") : null),
+      prevF ? h("div", { class: "seg view-toggle", role: "group", "aria-label": "Which forecast to show" },
+        [["now", afterLabel(m.mode)], ["before", beforeLabel(m.mode)]].map(([k, l]) => h("button", { type: "button", class: (k === "before") === before ? "on" : "",
+          "aria-pressed": String((k === "before") === before), onclick: () => { state.raceView = k; rerender(); } }, l))) : null,
+      before ? h("p", { class: "view-note" }, `Showing the forecast from before ${SESSION_OF[m.mode]}. The full grid below is the latest forecast.`) : shiftLink(nx),
       provisionalEl(m),
       h("div", { class: "hero-meta" }, countdownEl(m), trackCard(nx)),
       h("p", { class: "hero-note" }, nerd()
@@ -312,13 +319,13 @@ function renderRace(root) {
     countUp(big, d.win * 100, (v) => v.toFixed(1));
     return h("button", { class: `pod p${place}`, style: `--team:${teamColor(d.Team)}`, onclick: () => openDriver(d.Driver), "aria-label": `${name(d.Driver)}, ${pct(d.win)} to win` },
       shot, h("div", { class: "body" }, h("div", { class: "big" }, big, h("small", {}, "%")), h("div", { class: "lbl" }, "chance to win"),
-        h("div", { class: "mini" }, h("span", {}, "Podium ", h("b", {}, pct(d.podium))), h("span", {}, "Avg finish ", h("b", {}, "P" + fx(d.exp_pos, 1))), nerd() ? h("span", {}, "E[pts] ", h("b", {}, fx(d.exp_pts, 1))) : null)));
+        h("div", { class: "mini" }, h("span", {}, "Podium ", h("b", {}, pct(d.podium))), h("span", {}, "Avg finish ", h("b", {}, "P" + fx(d.exp_pos, 1))), nerd() && !before ? h("span", {}, "E[pts] ", h("b", {}, fx(d.exp_pts, 1))) : null)));
   }));
 
   const sc = 1 / Math.max(...byWin.map((x) => x.podium));
   const winList = stagger(h("div", { class: "stack", style: "gap:2px" }, (nerd() ? byWin : byWin.slice(0, 10)).map((d) => {
     const row = btn("rowbtn", () => openDriver(d.Driver), "grid-template-columns:150px 1fr;gap:12px;align-items:center;min-height:44px", drvCell(d.Driver, d.Team, SHORT[d.Team] || d.Team, 32));
-    if (nerd()) {
+    if (nerd() && !before) {
       const dd = nx.dist[d.Driver] || [];
       row.style.gridTemplateColumns = "150px 1fr 112px";
       row.append(h("div", { class: "pbar", "data-tip": `P1 ${pct(dd[0])} · P2 ${pct(dd[1])} · P3 ${pct(dd[2])}` },
@@ -351,7 +358,62 @@ function renderRace(root) {
     h("div", { class: "grid g-main" }, h("div", { class: "stack" }, podium, quickFacts(nx)), winPanel),
     circuit3dEl(nx, fav),
     h("div", { class: "mt" }, panel(nerd() ? "Simulated classification" : "The grid, predicted", nerd() ? "sortable · click a row for the driver file" : "tap a driver for details", table(D, cols, { key: "race", onRow: (d) => openDriver(d.Driver) }))));
+  const shift = shiftPanel(nx);
+  if (shift) root.append(h("div", { class: "mt", id: "shift" }, shift));
   if (nerd()) root.append(h("div", { class: "mt" }, heatmapPanel(nx)));
+}
+// the forecast before and after the latest session (e.g. qualifying): how much that session moved it
+const SHIFT_LABEL = { ...MODE_LABEL, pre_weekend: "Before practice" };
+// before/after comparison is shown once qualifying is in (practice and sprint updates move the forecast too little)
+const SESSION_OF = { post_quali: "qualifying" };
+const afterLabel = (mode) => `After ${SESSION_OF[mode]}`, beforeLabel = (mode) => `Before ${SESSION_OF[mode]}`;
+function shiftStats(nx) {
+  const P = nx.previous, cur = nx.meta.mode;
+  if (!P?.drivers?.length || !SESSION_OF[cur]) return null;
+  const before = Object.fromEntries(P.drivers.map((d) => [d.Driver, d]));
+  const rows = nx.drivers.filter((d) => before[d.Driver]).map((d) => ({ d, b: before[d.Driver], moved: before[d.Driver].exp_pos - d.exp_pos }));
+  if (!rows.length) return null;
+  const session = SESSION_OF[cur];
+  const fav = [...nx.drivers].sort((a, b) => b.win - a.win)[0];
+  return { P, cur, before, rows, session, fav, avg: rows.reduce((s, r) => s + Math.abs(r.moved), 0) / rows.length };
+}
+// one line in the hero: how much the latest session moved the forecast; jumps to the full comparison
+function shiftLink(nx) {
+  const S = shiftStats(nx);
+  if (!S) return null;
+  const was = S.before[S.fav.Driver]?.win;
+  return h("button", { type: "button", class: "shift-link", onclick: () => document.getElementById("shift")?.scrollIntoView({ behavior: "smooth", block: "start" }) },
+    h("b", {}, `${S.session[0].toUpperCase()}${S.session.slice(1)} moved the forecast`),
+    h("span", {}, `avg ${fx(S.avg, 1)} places`),
+    h("span", {}, `${S.fav.Driver} ${pct(was)} → ${pct(S.fav.win)} to win`),
+    h("i", {}, "see what changed ↓"));
+}
+function shiftPanel(nx) {
+  const P = nx.previous, cur = nx.meta.mode;
+  if (!P?.drivers?.length || !SESSION_OF[cur]) return null;
+  const before = Object.fromEntries(P.drivers.map((d) => [d.Driver, d]));
+  const rows = nx.drivers.filter((d) => before[d.Driver]).map((d) => ({ d, b: before[d.Driver], moved: before[d.Driver].exp_pos - d.exp_pos }));
+  if (!rows.length) return null;
+  const session = SESSION_OF[cur];
+  const avg = rows.reduce((s, r) => s + Math.abs(r.moved), 0) / rows.length;
+  const up = rows.reduce((a, r) => (r.moved > a.moved ? r : a)), down = rows.reduce((a, r) => (r.moved < a.moved ? r : a));
+  const arrow = (v) => h("span", { class: "mono", style: `color:${Math.abs(v) < 0.25 ? "var(--muted)" : v > 0 ? "var(--good)" : "var(--bad)"}` },
+    Math.abs(v) < 0.25 ? "=" : `${v > 0 ? "▲" : "▼"} ${fx(Math.abs(v), 1)}`);
+  const pp = (v) => (v > 0 ? "+" : "") + fx(v * 100, 0) + " pts";
+  const favNow = [...nx.drivers].sort((a, b) => b.win - a.win)[0];   // favourite = highest win chance, as in the hero
+  return panel(`What ${session} changed`, `${beforeLabel(cur)} vs ${afterLabel(cur).toLowerCase()} · expected finish and win chance`,
+    h("div", { class: "grid g-4" },
+      stat(fx(avg, 1), "Places moved", `average change in a driver's expected finish after ${session}`, "cyan"),
+      stat(up.d.Driver, "Biggest riser", `${fx(up.b.exp_pos, 1)} → ${fx(up.d.exp_pos, 1)} expected finish`, ""),
+      stat(down.d.Driver, "Biggest faller", `${fx(down.b.exp_pos, 1)} → ${fx(down.d.exp_pos, 1)} expected finish`, "accent"),
+      stat(favNow.Driver, "Now favourite", `${pct(before[favNow.Driver]?.win)} → ${pct(favNow.win)} to win`, "")),
+    h("div", { class: "mt" }, table(rows, [
+      { id: "drv", label: "Driver", val: (r) => r.d.Driver, render: (r) => drvCell(r.d.Driver, r.d.Team, SHORT[r.d.Team] || r.d.Team, 28) },
+      { id: "bp", label: beforeLabel(cur), num: true, val: (r) => r.b.exp_pos, render: (r) => h("span", { class: "mono muted" }, `P${fx(r.b.exp_pos, 1)} · ${pct(r.b.win)}`) },
+      { id: "np", label: afterLabel(cur), num: true, val: (r) => r.d.exp_pos, render: (r) => h("span", { class: "mono" }, `P${fx(r.d.exp_pos, 1)} · ${pct(r.d.win)}`) },
+      { id: "mv", label: "Places", num: true, desc: true, val: (r) => r.moved, render: (r) => arrow(r.moved) },
+      { id: "wn", label: "Win chance", num: true, desc: true, val: (r) => r.d.win - r.b.win, render: (r) => h("span", { class: "mono muted" }, pp(r.d.win - r.b.win)) }],
+      { key: "shift", onRow: (r) => openDriver(r.d.Driver) })));
 }
 function trackCard(nx) {
   const t = nx.track, c = nx.circuit, id = nx.meta.identity || {};

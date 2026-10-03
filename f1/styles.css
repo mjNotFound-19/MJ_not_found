@@ -795,3 +795,13 @@ table.repro th, table.repro td { white-space: normal; }
   .car3-strip .pill-toggle { flex: none; }
 }
 .footer .disclaimer { flex-basis: 100%; max-width: 110ch; font-size: 12px; line-height: 1.5; color: var(--muted); }
+
+/* hero: what the latest session changed (links to the comparison panel) */
+.shift-link { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; margin-top: 12px; min-height: 40px; padding: 8px 14px; border-radius: var(--radius-ctl); background: rgba(0, 0, 0, .45); border: 1px solid var(--border-strong); font: 500 13px/1.2 var(--mono); color: var(--text-2); cursor: pointer; text-align: left; transition: border-color var(--t-fast) var(--ease), background-color var(--t-fast) var(--ease); }
+.shift-link b { font: 700 13px/1.2 var(--display); letter-spacing: .05em; text-transform: uppercase; color: #fff; }
+.shift-link span + span::before, .shift-link b + span::before { content: '·'; margin-right: 14px; color: var(--muted); }
+.shift-link i { font-style: normal; color: #ff6b6b; }
+.shift-link:hover { border-color: rgba(220, 38, 38, .6); background: rgba(127, 29, 29, .35); }
+.shift-link:focus-visible { outline: 2px solid #ff6b6b; outline-offset: 2px; }
+.view-toggle { margin-top: 12px; }
+.view-note { margin: 10px 0 0; font: 500 13px/1.4 var(--mono); color: #ffcf7a; }
