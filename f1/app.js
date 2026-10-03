@@ -463,7 +463,7 @@ function circuit3dEl(nx, fav) {
       h("dl", { class: "c3-tr" }, stats.map(([k, v]) => h("div", {}, h("dt", {}, k), h("dd", {}, String(v))))),
       h("div", { class: "c3-bl" }, h("div", { class: "c3-speed", "aria-hidden": "true" }, h("span", {}, "Speed"), speedV, h("small", {}, "km/h"), h("div", { class: "c3-sbar" }, speedBar)),
         h("p", {}, nerd() ? `Reference: ${name(t.driver)}, fastest lap ${lapStr} (${t.source}). Ribbon = telemetry speed, height = elevation ×7.`
-          : `${name(t.driver)}'s fastest lap from last year, coloured by speed. Hills are exaggerated 7× so you can see them.`)),
+          : `${name(t.driver)}'s ${t.session === "Q" ? "pole lap from qualifying" : "fastest lap from last year"}, coloured by speed. Hills are exaggerated 7× so you can see them.`)),
       h("div", { class: "c3-br", "aria-hidden": "true" }, h("div", { class: "c3-legend" }, h("span", {}, `${vmin}`), h("i"), h("span", {}, `${vmax} km/h`)), h("span", { class: "c3-hint" }, "Drag to rotate"))));
   const io = new IntersectionObserver(([e]) => {
     if (!e.isIntersecting) return;
