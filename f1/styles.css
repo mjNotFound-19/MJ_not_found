@@ -883,3 +883,14 @@ table.repro th, table.repro td { white-space: normal; }
   .hero-portrait:has(.hero-car) .tag { top: 0; right: auto; left: 50%; transform: translateX(-50%); text-align: center; white-space: nowrap; }
 }
 .car3-wip { margin-top: 8px; align-self: flex-start; pointer-events: auto; }
+/* race result hero: the winner, celebrated */
+.hero-result .hero-portrait img { filter: drop-shadow(0 0 34px color-mix(in srgb, var(--team) 55%, transparent)) drop-shadow(0 18px 40px rgba(0, 0, 0, .55)); }
+.hero-result .hero-portrait::before { content: ''; position: absolute; left: 12%; right: 0; top: 4%; bottom: 20%; z-index: 0; border-radius: 50%; background: radial-gradient(closest-side, rgba(255, 215, 94, .28), rgba(255, 184, 64, .1) 55%, transparent); pointer-events: none; }
+.confetti { position: absolute; inset: -6% -10% 0 -30%; width: 140%; height: 106%; z-index: 4; pointer-events: none; }
+.winner-line { margin: var(--s4) 0 0; font: 500 clamp(17px, 1.6vw, 22px)/1.35 var(--body, inherit); color: var(--text-2); max-width: 640px; }
+.winner-line b { color: #fff; font-weight: 700; }
+.hero-portrait .tag.winner { border-color: rgba(255, 215, 94, .65); background: rgba(40, 30, 6, .78); }
+.hero-portrait .tag.winner b { display: flex; align-items: center; gap: 8px; font: 800 22px/1 var(--display); letter-spacing: .08em; text-transform: uppercase; color: #ffd75e; }
+.hero-portrait .tag.winner b svg { width: 22px; height: 22px; }
+.hero-portrait .tag.winner span { display: block; margin-top: 6px; color: #f4e7b8; }
+.tyre.U { --tc: var(--muted); }
