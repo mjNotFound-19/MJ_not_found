@@ -802,6 +802,7 @@ function renderStrategy(root) {
           ". Practice wear has not yet proved more accurate than the model in testing (it is ahead on average but within noise), so the race predictions use the model."
         : "No race here in our data, so tyre wear is a pooled estimate. Switch to the practice view to see the plans if this weekend's long runs are right.") : null));
   }
+  const setsEl = tyreSetsPanel(nx, fpView);
   if (dyn) {
     const y = dyn, cls = y.kind === "undercut" ? "good" : y.kind === "overcut" ? "bad" : "";
     right.splice(1, 0, panel("Undercut or overcut?", `first flying lap on new tyres vs one more lap on the old set at lap ${y.at_lap}`,
@@ -824,7 +825,28 @@ function renderStrategy(root) {
   }
   root.append(h("div", { class: "grid g-main mt" }, panel("Tyre plan by driver", "most likely plan · shaded = first-stop window", lanes,
     h("div", { class: "legend" }, ["S", "M", "H"].map((k) => h("span", {}, h("i", { style: `background:${COMP_COLOR[k]}` }), COMP[k])), h("span", {}, h("i", { style: "background:var(--data)" }), "pit window"))), h("div", { class: "stack" }, right)));
+  if (setsEl) root.append(h("div", { class: "mt" }, setsEl));
   if (reco) root.append(h("div", { class: "mt" }, reco));
+}
+// after qualifying: the dry sets each driver has left, and the fastest plan those sets allow
+function tyreSetsPanel(nx, fpView) {
+  const TS = nx.tyre_sets;
+  if (!TS?.drivers) return null;
+  const key = fpView && Object.values(TS.drivers)[0]?.practice ? "practice" : "model";
+  const rows = nx.drivers.filter((d) => TS.drivers[d.Driver]).map((d) => ({ d, s: TS.drivers[d.Driver], p: TS.drivers[d.Driver][key] }));
+  if (!rows.length) return null;
+  const A = TS.allocation, chip = (k, n) => h("span", { class: "set-count", "data-tip": `${n} new ${COMP[k].toLowerCase()} set${n === 1 ? "" : "s"} left` },
+    h("i", { style: `background:${COMP_COLOR[k]}` }), h("b", { class: n ? "" : "muted" }, n));
+  const short = { SOFT: "S", MEDIUM: "M", HARD: "H" };
+  return panel("Tyres left for the race", `new sets per driver after qualifying · fastest plan those sets allow (${key === "practice" ? "practice wear" : "model wear"})`,
+    table(rows, [
+      { id: "drv", label: "Driver", val: (r) => r.d.Driver, render: (r) => drvCell(r.d.Driver, r.d.Team, SHORT[r.d.Team] || r.d.Team, 28) },
+      { id: "new", label: "New sets  S / M / H", val: (r) => r.s.new.SOFT * 100 + r.s.new.MEDIUM * 10 + r.s.new.HARD, render: (r) => h("span", { class: "set-row" }, ["SOFT", "MEDIUM", "HARD"].map((k) => chip(short[k], r.s.new[k]))) },
+      { id: "used", label: "Used sets kept", render: (r) => h("span", { class: "mono muted" }, r.s.used.length ? r.s.used.map((u) => `${short[u.compound]}·${u.laps}`).join("  ") : "-"), tip: "compound · laps already on the set" },
+      { id: "plan", label: "Fastest plan available", val: (r) => r.p?.delta_s ?? 99, render: (r) => (r.p ? h("span", {}, tyres(r.p.plan), h("span", { class: "strat-txt" }, r.p.lens.join(" / "))) : "-") },
+      { id: "d", label: "vs ideal", num: true, val: (r) => r.p?.delta_s ?? 99, render: (r) => (r.p ? (r.p.delta_s <= 0.05 ? h("span", { class: "badge good" }, "ideal") : h("span", { class: "mono" }, `+${fx(r.p.delta_s, 1)}s`)) : "-"), tip: "time lost against the fastest plan with unlimited new sets" }],
+      { key: "sets", onRow: (r) => openDriver(r.d.Driver) }),
+    h("p", { class: "sub" }, `Counted from every stint in practice and qualifying: a stint that starts on a fresh tyre opens a new set. Assumes the standard allocation of ${A.HARD} hard, ${A.MEDIUM} medium and ${A.SOFT} soft sets, with ${TS.race_sets} kept for qualifying and the race. Stint laps are tyre-wear optimal, with no traffic or safety car.`));
 }
 
 /* ------------------------------------------------------------------ DRIVERS */
@@ -1022,8 +1044,8 @@ function garageEl(T) {
       h("div", { class: "c3-tl" }, idxV, nameV),
       dl,
       h("div", { class: "c3-bl" }, drv, h("p", {}, nerd()
-        ? "Generated 3D model (tools/cars): parametric surfaces and a baked PBR livery read off each team's reference art. Not team CAD; the power unit, radiators and gearbox are reconstructed. Sponsor names are plain wordmarks."
-        : "A 3D model in each team's livery, built for this site rather than taken from the real car. Watch it come apart and rebuild as the next team's car.")),
+        ? "Community 3D models (CC BY, credited below), split into components for the transition. Four cars carry their author's livery textures; the rest share the FIA 2026 show-car body with liveries painted by this site's pipeline (plain-text sponsor names). Not team CAD."
+        : "A 3D model in each team's colours, built from community models credited below, not the teams' own designs. Watch it come apart and rebuild as the next team's car.")),
       h("div", { class: "c3-br car3-ctl" },
         status,
         h("div", { class: "car3-btns" },
