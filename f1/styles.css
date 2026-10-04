@@ -898,3 +898,4 @@ table.repro th, table.repro td { white-space: normal; }
 .order-row .order-pts { text-align: right; color: var(--text-2); }
 /* the portrait is cropped at the waist: fade its lower edge out so no hard cut shows behind the car */
 .hero-portrait:has(.hero-car) img { -webkit-mask-image: linear-gradient(to bottom, #000 62%, transparent 97%); mask-image: linear-gradient(to bottom, #000 62%, transparent 97%); }
+.car3-wip[hidden] { display: none; }
