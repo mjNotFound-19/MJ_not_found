@@ -894,3 +894,5 @@ table.repro th, table.repro td { white-space: normal; }
 .hero-portrait .tag.winner b svg { width: 22px; height: 22px; }
 .hero-portrait .tag.winner span { display: block; margin-top: 6px; color: #f4e7b8; }
 .tyre.U { --tc: var(--muted); }
+.order-row { display: grid; grid-template-columns: 38px minmax(0, 1fr) 52px 60px; gap: 10px; align-items: center; min-height: 44px; }
+.order-row .order-pts { text-align: right; color: var(--text-2); }
