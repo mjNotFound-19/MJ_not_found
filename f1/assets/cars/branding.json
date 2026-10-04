@@ -1,0 +1,490 @@
+{
+ "note": "Every sponsor/supplier mark on the generated cars, with its source and usage status. Set TEAMS[...]['decals'] = [] in tools/cars/teams.py and rebuild to remove them.",
+ "teams": {
+  "Mercedes": {
+   "reference": "user-supplied reference illustration ~/Downloads/mercedes.png (AI-styled 'conceptual exploded view')",
+   "team_name": "Mercedes",
+   "marks": [
+    {
+     "text": "PETRONAS",
+     "rendering": "plain wordmark in Bahnschrift/Arial (not official artwork)",
+     "source": "name read from the reference illustration",
+     "status": "third-party trademark; no licence held by this project - unresolved"
+    },
+    {
+     "text": "TeamViewer",
+     "rendering": "plain wordmark in Bahnschrift/Arial (not official artwork)",
+     "source": "name read from the reference illustration",
+     "status": "third-party trademark; no licence held by this project - unresolved"
+    },
+    {
+     "text": "Snapdragon",
+     "rendering": "plain wordmark in Bahnschrift/Arial (not official artwork)",
+     "source": "name read from the reference illustration",
+     "status": "third-party trademark; no licence held by this project - unresolved"
+    },
+    {
+     "text": "INEOS",
+     "rendering": "plain wordmark in Bahnschrift/Arial (not official artwork)",
+     "source": "name read from the reference illustration",
+     "status": "third-party trademark; no licence held by this project - unresolved"
+    },
+    {
+     "text": "Microsoft",
+     "rendering": "plain wordmark in Bahnschrift/Arial (not official artwork)",
+     "source": "name read from the reference illustration",
+     "status": "third-party trademark; no licence held by this project - unresolved"
+    },
+    {
+     "text": "Einhell",
+     "rendering": "plain wordmark in Bahnschrift/Arial (not official artwork)",
+     "source": "name read from the reference illustration",
+     "status": "third-party trademark; no licence held by this project - unresolved"
+    },
+    {
+     "text": "AMD",
+     "rendering": "plain wordmark in Bahnschrift/Arial (not official artwork)",
+     "source": "name read from the reference illustration",
+     "status": "third-party trademark; no licence held by this project - unresolved"
+    }
+   ],
+   "tyre_marks": {
+    "text": [
+     "PIRELLI",
+     "P ZERO"
+    ],
+    "status": "third-party trademark; plain text; unresolved"
+   }
+  },
+  "Ferrari": {
+   "reference": "user-supplied reference illustration ~/Downloads/ferrari.png (AI-styled 'conceptual exploded view')",
+   "team_name": "Ferrari",
+   "marks": [
+    {
+     "text": "Shell",
+     "rendering": "plain wordmark in Bahnschrift/Arial (not official artwork)",
+     "source": "name read from the reference illustration",
+     "status": "third-party trademark; no licence held by this project - unresolved"
+    },
+    {
+     "text": "ceva",
+     "rendering": "plain wordmark in Bahnschrift/Arial (not official artwork)",
+     "source": "name read from the reference illustration",
+     "status": "third-party trademark; no licence held by this project - unresolved"
+    },
+    {
+     "text": "PUMA",
+     "rendering": "plain wordmark in Bahnschrift/Arial (not official artwork)",
+     "source": "name read from the reference illustration",
+     "status": "third-party trademark; no licence held by this project - unresolved"
+    },
+    {
+     "text": "RICHARD MILLE",
+     "rendering": "plain wordmark in Bahnschrift/Arial (not official artwork)",
+     "source": "name read from the reference illustration",
+     "status": "third-party trademark; no licence held by this project - unresolved"
+    },
+    {
+     "text": "UniCredit",
+     "rendering": "plain wordmark in Bahnschrift/Arial (not official artwork)",
+     "source": "name read from the reference illustration",
+     "status": "third-party trademark; no licence held by this project - unresolved"
+    },
+    {
+     "text": "ZYN",
+     "rendering": "plain wordmark in Bahnschrift/Arial (not official artwork)",
+     "source": "name read from the reference illustration",
+     "status": "third-party trademark; no licence held by this project - unresolved"
+    },
+    {
+     "text": "IBM",
+     "rendering": "plain wordmark in Bahnschrift/Arial (not official artwork)",
+     "source": "name read from the reference illustration",
+     "status": "third-party trademark; no licence held by this project - unresolved"
+    },
+    {
+     "text": "HP",
+     "rendering": "plain wordmark in Bahnschrift/Arial (not official artwork)",
+     "source": "name read from the reference illustration",
+     "status": "third-party trademark; no licence held by this project - unresolved"
+    },
+    {
+     "text": "V-Power",
+     "rendering": "plain wordmark in Bahnschrift/Arial (not official artwork)",
+     "source": "name read from the reference illustration",
+     "status": "third-party trademark; no licence held by this project - unresolved"
+    },
+    {
+     "text": "PERONI",
+     "rendering": "plain wordmark in Bahnschrift/Arial (not official artwork)",
+     "source": "name read from the reference illustration",
+     "status": "third-party trademark; no licence held by this project - unresolved"
+    }
+   ],
+   "tyre_marks": {
+    "text": [
+     "PIRELLI",
+     "P ZERO"
+    ],
+    "status": "third-party trademark; plain text; unresolved"
+   }
+  },
+  "Red Bull Racing": {
+   "reference": "user-supplied reference illustration ~/Downloads/redbull.png (AI-styled 'conceptual exploded view')",
+   "team_name": "Red Bull Racing",
+   "marks": [
+    {
+     "text": "ORACLE",
+     "rendering": "plain wordmark in Bahnschrift/Arial (not official artwork)",
+     "source": "name read from the reference illustration",
+     "status": "third-party trademark; no licence held by this project - unresolved"
+    },
+    {
+     "text": "Red Bull",
+     "rendering": "plain wordmark in Bahnschrift/Arial (not official artwork)",
+     "source": "name read from the reference illustration",
+     "status": "third-party trademark; no licence held by this project - unresolved"
+    },
+    {
+     "text": "Mobil 1",
+     "rendering": "plain wordmark in Bahnschrift/Arial (not official artwork)",
+     "source": "name read from the reference illustration",
+     "status": "third-party trademark; no licence held by this project - unresolved"
+    },
+    {
+     "text": "AT&T",
+     "rendering": "plain wordmark in Bahnschrift/Arial (not official artwork)",
+     "source": "name read from the reference illustration",
+     "status": "third-party trademark; no licence held by this project - unresolved"
+    },
+    {
+     "text": "CARLYLE",
+     "rendering": "plain wordmark in Bahnschrift/Arial (not official artwork)",
+     "source": "name read from the reference illustration",
+     "status": "third-party trademark; no licence held by this project - unresolved"
+    }
+   ],
+   "tyre_marks": {
+    "text": [
+     "PIRELLI",
+     "P ZERO"
+    ],
+    "status": "third-party trademark; plain text; unresolved"
+   }
+  },
+  "McLaren": {
+   "reference": "user-supplied reference illustration ~/Downloads/mclaren.png (AI-styled 'conceptual exploded view')",
+   "team_name": "McLaren",
+   "marks": [
+    {
+     "text": "DP WORLD",
+     "rendering": "plain wordmark in Bahnschrift/Arial (not official artwork)",
+     "source": "name read from the reference illustration",
+     "status": "third-party trademark; no licence held by this project - unresolved"
+    },
+    {
+     "text": "VELO",
+     "rendering": "plain wordmark in Bahnschrift/Arial (not official artwork)",
+     "source": "name read from the reference illustration",
+     "status": "third-party trademark; no licence held by this project - unresolved"
+    },
+    {
+     "text": "Gemini",
+     "rendering": "plain wordmark in Bahnschrift/Arial (not official artwork)",
+     "source": "name read from the reference illustration",
+     "status": "third-party trademark; no licence held by this project - unresolved"
+    },
+    {
+     "text": "Dropbox",
+     "rendering": "plain wordmark in Bahnschrift/Arial (not official artwork)",
+     "source": "name read from the reference illustration",
+     "status": "third-party trademark; no licence held by this project - unresolved"
+    },
+    {
+     "text": "OKX",
+     "rendering": "plain wordmark in Bahnschrift/Arial (not official artwork)",
+     "source": "name read from the reference illustration",
+     "status": "third-party trademark; no licence held by this project - unresolved"
+    },
+    {
+     "text": "workday",
+     "rendering": "plain wordmark in Bahnschrift/Arial (not official artwork)",
+     "source": "name read from the reference illustration",
+     "status": "third-party trademark; no licence held by this project - unresolved"
+    },
+    {
+     "text": "DELL",
+     "rendering": "plain wordmark in Bahnschrift/Arial (not official artwork)",
+     "source": "name read from the reference illustration",
+     "status": "third-party trademark; no licence held by this project - unresolved"
+    }
+   ],
+   "tyre_marks": {
+    "text": [
+     "PIRELLI",
+     "P ZERO"
+    ],
+    "status": "third-party trademark; plain text; unresolved"
+   }
+  },
+  "Racing Bulls": {
+   "reference": "user-supplied reference illustration ~/Downloads/racing_bulls.png (AI-styled 'conceptual exploded view')",
+   "team_name": "Racing Bulls",
+   "marks": [
+    {
+     "text": "VISA",
+     "rendering": "plain wordmark in Bahnschrift/Arial (not official artwork)",
+     "source": "name read from the reference illustration",
+     "status": "third-party trademark; no licence held by this project - unresolved"
+    },
+    {
+     "text": "Cash App",
+     "rendering": "plain wordmark in Bahnschrift/Arial (not official artwork)",
+     "source": "name read from the reference illustration",
+     "status": "third-party trademark; no licence held by this project - unresolved"
+    },
+    {
+     "text": "Red Bull",
+     "rendering": "plain wordmark in Bahnschrift/Arial (not official artwork)",
+     "source": "name read from the reference illustration",
+     "status": "third-party trademark; no licence held by this project - unresolved"
+    },
+    {
+     "text": "HUGO",
+     "rendering": "plain wordmark in Bahnschrift/Arial (not official artwork)",
+     "source": "name read from the reference illustration",
+     "status": "third-party trademark; no licence held by this project - unresolved"
+    },
+    {
+     "text": "Mobil 1",
+     "rendering": "plain wordmark in Bahnschrift/Arial (not official artwork)",
+     "source": "name read from the reference illustration",
+     "status": "third-party trademark; no licence held by this project - unresolved"
+    }
+   ],
+   "tyre_marks": {
+    "text": [
+     "PIRELLI",
+     "P ZERO"
+    ],
+    "status": "third-party trademark; plain text; unresolved"
+   }
+  },
+  "Alpine": {
+   "reference": "user-supplied reference illustration ~/Downloads/alpine.png (AI-styled 'conceptual exploded view')",
+   "team_name": "Alpine",
+   "marks": [
+    {
+     "text": "BWT",
+     "rendering": "plain wordmark in Bahnschrift/Arial (not official artwork)",
+     "source": "name read from the reference illustration",
+     "status": "third-party trademark; no licence held by this project - unresolved"
+    },
+    {
+     "text": "MSC",
+     "rendering": "plain wordmark in Bahnschrift/Arial (not official artwork)",
+     "source": "name read from the reference illustration",
+     "status": "third-party trademark; no licence held by this project - unresolved"
+    },
+    {
+     "text": "eni",
+     "rendering": "plain wordmark in Bahnschrift/Arial (not official artwork)",
+     "source": "name read from the reference illustration",
+     "status": "third-party trademark; no licence held by this project - unresolved"
+    },
+    {
+     "text": "Delphi",
+     "rendering": "plain wordmark in Bahnschrift/Arial (not official artwork)",
+     "source": "name read from the reference illustration",
+     "status": "third-party trademark; no licence held by this project - unresolved"
+    }
+   ],
+   "tyre_marks": {
+    "text": [
+     "PIRELLI",
+     "P ZERO"
+    ],
+    "status": "third-party trademark; plain text; unresolved"
+   }
+  },
+  "Audi": {
+   "reference": "user-supplied reference illustration ~/Downloads/audi.png (AI-styled 'conceptual exploded view')",
+   "team_name": "Audi",
+   "marks": [
+    {
+     "text": "Audi",
+     "rendering": "plain wordmark in Bahnschrift/Arial (not official artwork)",
+     "source": "name read from the reference illustration",
+     "status": "third-party trademark; no licence held by this project - unresolved"
+    },
+    {
+     "text": "QATAR AIRWAYS",
+     "rendering": "plain wordmark in Bahnschrift/Arial (not official artwork)",
+     "source": "name read from the reference illustration",
+     "status": "third-party trademark; no licence held by this project - unresolved"
+    }
+   ],
+   "tyre_marks": {
+    "text": [
+     "PIRELLI",
+     "P ZERO"
+    ],
+    "status": "third-party trademark; plain text; unresolved"
+   }
+  },
+  "Haas F1 Team": {
+   "reference": "user-supplied reference illustration ~/Downloads/haas.png (AI-styled 'conceptual exploded view')",
+   "team_name": "Haas F1 Team",
+   "marks": [
+    {
+     "text": "HAAS",
+     "rendering": "plain wordmark in Bahnschrift/Arial (not official artwork)",
+     "source": "name read from the reference illustration",
+     "status": "third-party trademark; no licence held by this project - unresolved"
+    },
+    {
+     "text": "MoneyGram",
+     "rendering": "plain wordmark in Bahnschrift/Arial (not official artwork)",
+     "source": "name read from the reference illustration",
+     "status": "third-party trademark; no licence held by this project - unresolved"
+    },
+    {
+     "text": "TGR",
+     "rendering": "plain wordmark in Bahnschrift/Arial (not official artwork)",
+     "source": "name read from the reference illustration",
+     "status": "third-party trademark; no licence held by this project - unresolved"
+    }
+   ],
+   "tyre_marks": {
+    "text": [
+     "PIRELLI",
+     "P ZERO"
+    ],
+    "status": "third-party trademark; plain text; unresolved"
+   }
+  },
+  "Williams": {
+   "reference": "user-supplied reference illustration ~/Downloads/williams.png (AI-styled 'conceptual exploded view')",
+   "team_name": "Williams",
+   "marks": [
+    {
+     "text": "BARCLAYS",
+     "rendering": "plain wordmark in Bahnschrift/Arial (not official artwork)",
+     "source": "name read from the reference illustration",
+     "status": "third-party trademark; no licence held by this project - unresolved"
+    },
+    {
+     "text": "KOMATSU",
+     "rendering": "plain wordmark in Bahnschrift/Arial (not official artwork)",
+     "source": "name read from the reference illustration",
+     "status": "third-party trademark; no licence held by this project - unresolved"
+    },
+    {
+     "text": "ATLASSIAN",
+     "rendering": "plain wordmark in Bahnschrift/Arial (not official artwork)",
+     "source": "name read from the reference illustration",
+     "status": "third-party trademark; no licence held by this project - unresolved"
+    },
+    {
+     "text": "MYPROTEIN",
+     "rendering": "plain wordmark in Bahnschrift/Arial (not official artwork)",
+     "source": "name read from the reference illustration",
+     "status": "third-party trademark; no licence held by this project - unresolved"
+    },
+    {
+     "text": "Gulf",
+     "rendering": "plain wordmark in Bahnschrift/Arial (not official artwork)",
+     "source": "name read from the reference illustration",
+     "status": "third-party trademark; no licence held by this project - unresolved"
+    },
+    {
+     "text": "DURACELL",
+     "rendering": "plain wordmark in Bahnschrift/Arial (not official artwork)",
+     "source": "name read from the reference illustration",
+     "status": "third-party trademark; no licence held by this project - unresolved"
+    }
+   ],
+   "tyre_marks": {
+    "text": [
+     "PIRELLI",
+     "P ZERO"
+    ],
+    "status": "third-party trademark; plain text; unresolved"
+   }
+  },
+  "Cadillac": {
+   "reference": "user-supplied reference illustration ~/Downloads/cadillac.png (AI-styled 'conceptual exploded view')",
+   "team_name": "Cadillac",
+   "marks": [
+    {
+     "text": "TWG",
+     "rendering": "plain wordmark in Bahnschrift/Arial (not official artwork)",
+     "source": "name read from the reference illustration",
+     "status": "third-party trademark; no licence held by this project - unresolved"
+    },
+    {
+     "text": "CADILLAC",
+     "rendering": "plain wordmark in Bahnschrift/Arial (not official artwork)",
+     "source": "name read from the reference illustration",
+     "status": "third-party trademark; no licence held by this project - unresolved"
+    },
+    {
+     "text": "IFS",
+     "rendering": "plain wordmark in Bahnschrift/Arial (not official artwork)",
+     "source": "name read from the reference illustration",
+     "status": "third-party trademark; no licence held by this project - unresolved"
+    }
+   ],
+   "tyre_marks": {
+    "text": [
+     "PIRELLI",
+     "P ZERO"
+    ],
+    "status": "third-party trademark; plain text; unresolved"
+   }
+  },
+  "Aston Martin": {
+   "reference": "user-supplied reference illustration ~/Downloads/aston_martin.png (AI-styled 'conceptual exploded view')",
+   "team_name": "Aston Martin",
+   "marks": [
+    {
+     "text": "aramco",
+     "rendering": "plain wordmark in Bahnschrift/Arial (not official artwork)",
+     "source": "name read from the reference illustration",
+     "status": "third-party trademark; no licence held by this project - unresolved"
+    },
+    {
+     "text": "BOSS",
+     "rendering": "plain wordmark in Bahnschrift/Arial (not official artwork)",
+     "source": "name read from the reference illustration",
+     "status": "third-party trademark; no licence held by this project - unresolved"
+    },
+    {
+     "text": "MAADEN",
+     "rendering": "plain wordmark in Bahnschrift/Arial (not official artwork)",
+     "source": "name read from the reference illustration",
+     "status": "third-party trademark; no licence held by this project - unresolved"
+    },
+    {
+     "text": "cognizant",
+     "rendering": "plain wordmark in Bahnschrift/Arial (not official artwork)",
+     "source": "name read from the reference illustration",
+     "status": "third-party trademark; no licence held by this project - unresolved"
+    },
+    {
+     "text": "GLENFIDDICH",
+     "rendering": "plain wordmark in Bahnschrift/Arial (not official artwork)",
+     "source": "name read from the reference illustration",
+     "status": "third-party trademark; no licence held by this project - unresolved"
+    }
+   ],
+   "tyre_marks": {
+    "text": [
+     "PIRELLI",
+     "P ZERO"
+    ],
+    "status": "third-party trademark; plain text; unresolved"
+   }
+  }
+ }
+}

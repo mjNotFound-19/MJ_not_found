@@ -15,7 +15,7 @@ const ISO = {
   "Portugal": "pt", "France": "fr", "Germany": "de", "Russia": "ru", "Turkey": "tr", "Vietnam": "vn", "Argentina": "ar", "South Africa": "za"
 };
 const MODE_LABEL = { pre_weekend: "Pre-weekend forecast", post_fp: "After practice", post_sprint: "After the sprint", post_quali: "After qualifying" };
-const COMP = { S: "SOFT", M: "MEDIUM", H: "HARD" };
+const COMP = { S: "SOFT", M: "MEDIUM", H: "HARD", I: "INTERMEDIATE", W: "WET" };
 const COMP_COLOR = { S: "#ef4444", M: "#facc15", H: "#f1f5f9", SOFT: "#ef4444", MEDIUM: "#facc15", HARD: "#f1f5f9" };
 const ICON = {
   check: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12l5 5 9-10" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>',
@@ -309,6 +309,7 @@ function renderRace(root) {
       h("span", {}, `${Number(m.n_sims).toLocaleString()} RACES`), h("span", {}, `RND_${String(m.round).padStart(2, "0")} // ${m.event.toUpperCase()}`), h("span", {}, `P(SC) ${pct(m.p_sc)}`)),
     h("div", { class: "hero-portrait" },
       cutout(fav.Driver, { loading: "eager", fetchpriority: "high", alt: `${name(fav.Driver)}, race favourite`, width: 480, height: 480 }),
+      heroCarEl(fav),
       h("button", { type: "button", class: "tag", onclick: () => openDriver(fav.Driver), "aria-label": `Open ${name(fav.Driver)}` }, h("b", {}, pct(fav.win)), h("span", {}, `${name(fav.Driver)} to win`))));
   const marquee = marqueeEl(byWin.slice(0, 8));
   const podium = h("div", { class: "podium" }, [byWin[1], byWin[0], byWin[2]].map((d, i) => {
@@ -356,7 +357,9 @@ function renderRace(root) {
   ];
   root.append(hero, marquee, consoleEl(nx),
     h("div", { class: "grid g-main" }, h("div", { class: "stack" }, podium, quickFacts(nx)), winPanel),
+    garageOn() && state.data.constructors?.length ? h("div", { class: "mt" }, sectionHead(["The ", em("garage")], "All eleven 2026 cars in 3D. Drag to turn one around, or let it come apart and rebuild as the next."), garageEl(state.data.constructors)) : null,
     circuit3dEl(nx, fav),
+    weatherEl(nx),
     h("div", { class: "mt" }, panel(nerd() ? "Simulated classification" : "The grid, predicted", nerd() ? "sortable · click a row for the driver file" : "tap a driver for details", table(D, cols, { key: "race", onRow: (d) => openDriver(d.Driver) }))));
   const shift = shiftPanel(nx);
   if (shift) root.append(h("div", { class: "mt", id: "shift" }, shift));
@@ -367,6 +370,24 @@ const SHIFT_LABEL = { ...MODE_LABEL, pre_weekend: "Before practice" };
 // before/after comparison is shown once qualifying is in (practice and sprint updates move the forecast too little)
 const SESSION_OF = { post_quali: "qualifying" };
 const afterLabel = (mode) => `After ${SESSION_OF[mode]}`, beforeLabel = (mode) => `Before ${SESSION_OF[mode]}`;
+// the 3D garage is a work in progress: builds published without it switch it off (web/scripts/publish-portfolio.sh)
+const garageOn = () => document.querySelector('meta[name="f1h-garage"]')?.content !== "off";
+// Hero: the favourite's car, in 3D, in front of the driver (driver and car are one entry). Light version of the
+// garage viewer: one car, the phone-size model, no post-processing, transparent over the hero.
+function heroCarEl(fav) {
+  if (state.heroCar) { state.heroCar.dispose(); state.heroCar = null; }
+  if (!garageOn() || !fav || reduced()) return null;
+  const S = state.data.standings?.drivers || [], ds = S.filter((d) => d.Team === fav.Team).slice(0, 2);
+  const drivers = ds.map((d) => ({ code: d.Driver, name: name(d.Driver), number: person(d.Driver).number ?? "" }));
+  const el = h("div", { class: "c3 hero-car", "aria-hidden": "true" });
+  const start = () => import("./garage3d.js").then((mod) => mod.mount(el, {
+    teams: [{ team: fav.Team, label: SHORT[fav.Team] || fav.Team, color: teamColor(fav.Team), drivers, driver: Math.max(0, drivers.findIndex((d) => d.code === fav.Driver)) }],
+    manifestUrl: "assets/cars/manifest.json", start: 0, auto: false, quality: "mobile", view: { az: 0.74, tilt: 0.17, zoom: 0.93, sway: 0.14 } }))
+    .then((c) => { if (!el.isConnected) { c.dispose(); return; } state.heroCar = c; el.classList.add("live"); })
+    .catch((err) => { el.remove(); console.info("hero car unavailable:", err.message); });
+  (window.requestIdleCallback || ((f) => setTimeout(f, 600)))(start);      // after the first paint
+  return el;
+}
 function shiftStats(nx) {
   const P = nx.previous, cur = nx.meta.mode;
   if (!P?.drivers?.length || !SESSION_OF[cur]) return null;
@@ -803,6 +824,8 @@ function renderStrategy(root) {
         : "No race here in our data, so tyre wear is a pooled estimate. Switch to the practice view to see the plans if this weekend's long runs are right.") : null));
   }
   const setsEl = tyreSetsPanel(nx, fpView);
+  const wxEl = weatherStrategyEl(nx, fpView);
+  if (wxEl) right.unshift(wxEl);
   if (dyn) {
     const y = dyn, cls = y.kind === "undercut" ? "good" : y.kind === "overcut" ? "bad" : "";
     right.splice(1, 0, panel("Undercut or overcut?", `first flying lap on new tyres vs one more lap on the old set at lap ${y.at_lap}`,
@@ -827,6 +850,210 @@ function renderStrategy(root) {
     h("div", { class: "legend" }, ["S", "M", "H"].map((k) => h("span", {}, h("i", { style: `background:${COMP_COLOR[k]}` }), COMP[k])), h("span", {}, h("i", { style: "background:var(--data)" }), "pit window"))), h("div", { class: "stack" }, right)));
   if (setsEl) root.append(h("div", { class: "mt" }, setsEl));
   if (reco) root.append(h("div", { class: "mt" }, reco));
+}
+/* ------------------------------------------------------------------ LIVE WEATHER (web/weather.js) */
+const WX_LABEL = { dry: "Dry", threat: "Showers nearby", wet: "Rain at the circuit" };
+const WX_CLASS = { dry: "good", threat: "warn", wet: "bad" };
+const lapClock = (s) => `${Math.floor(s / 60)}:${(s % 60).toFixed(1).padStart(4, "0")}`;
+// The radar forecast for the circuit (one value per minute) in a sentence: when rain arrives or clears
+function nowcastSummary(w) {
+  const nc = (w.nowcast || []).filter((x) => x.t > Date.now() - 60000 && x.t <= Date.now() + 3600000);     // the hour ahead of now
+  if (nc.length < 10) return null;
+  const mins = (x) => Math.max(1, Math.round((x.t - Date.now()) / 60000)), wetNow = w.kind === "wet";
+  const flip = nc.find((x) => x.wet !== wetNow), horizon = mins(nc[nc.length - 1]);
+  if (wetNow) return flip ? { kind: "clearing", text: `rain clears in about ${mins(flip)} min`, at: flip.t } : { kind: "wet", text: `rain stays for the next ${horizon} min` };
+  return flip ? { kind: "arriving", text: `rain arrives in about ${mins(flip)} min`, at: flip.t } : { kind: "dry", text: `no rain for the next ${horizon} min` };
+}
+// Race page: radar loop around the circuit + conditions now and for the next hours
+function weatherEl(nx) {
+  const G = nx.geo;
+  if (!G) return null;
+  if (state.radar) { state.radar.dispose(); state.radar = null; }
+  const map = h("div", { class: "wx-map" }, h("div", { class: "wx-wait" }, "Loading radar…"));
+  const stats = h("div", { class: "wx-stats" });
+  const el = h("div", { class: "mt" }, panel("Live weather at the circuit", "rain radar: last two hours, now and a one-hour forecast, minute by minute · drag to move, pinch or ctrl + scroll to zoom",
+    h("div", { class: "wx" }, map, stats),
+    h("p", { class: "sub" }, "Radar: RainViewer · Map: © OpenStreetMap contributors · Conditions and forecast: Open-Meteo · Circuit outline: OpenStreetMap or f1-circuits (MIT). The timeline runs minute by minute: radar scans arrive every 10 minutes, the minutes between them are filled by moving the rain along its tracked motion, and the amber part is a one-hour forecast (block-correlation motion field, semi-Lagrangian advection, blurred as the lead time grows). It cannot predict showers growing or dying. Small showers can sit between radar pixels (about 1 km).")));
+  import("./weather.js").then((mod) => {
+    let tz = null, timer = null;
+    // live clocks: the circuit's local time and this device's time
+    const clock = h("div", { class: "wx-clock" }), tick = () => {
+      const c = mod.dualTime(Date.now(), tz, { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+      clock.replaceChildren(...(c.same ? [h("div", {}, h("span", {}, "Local time"), h("b", {}, c.mine))]
+        : [h("div", {}, h("span", {}, "At the circuit"), h("b", {}, c.track)), h("div", {}, h("span", {}, "Your time"), h("b", {}, c.mine))]));
+    };
+    let skill = null;
+    const show = (w, extra) => {                // runs now and whenever new radar or forecast data arrives
+      if (extra?.skill) skill = extra.skill;
+      const nc = nowcastSummary(w), sk = skill?.m30;
+      tz = w.tz; tick(); if (!timer) timer = setInterval(tick, 1000);
+      const hours = w.hours.slice(0, 6), mx = Math.max(0.5, ...hours.map((x) => x.mm));
+      const HH = { hour: "numeric" }, hour = (t) => mod.dualTime(t, w.tz, HH);
+      stats.replaceChildren(
+      h("div", { class: `wx-now ${WX_CLASS[w.kind]}` }, h("b", {}, WX_LABEL[w.kind]),
+        h("span", {}, w.precipNow >= 0.05 ? `${fx(w.precipNow * 4, 1)} mm/h now` : w.kind === "wet" ? "shower on radar" : "no rain now", w.temp != null ? ` · ${fx(w.temp, 0)}°C` : "", w.wind != null ? ` · wind ${fx(w.wind, 0)} km/h` : "")),
+      h("dl", { class: "kv" },
+        h("dt", {}, "Nearest rain on radar"), h("dd", {}, w.nearestKm == null ? "none in range" : w.nearestKm < 2 ? "over the circuit" : `${fx(w.nearestKm, 0)} km away`),
+        h("dt", {}, "Radar forecast, next hour"), h("dd", {}, nc ? nc.text : "building…"),
+        h("dt", {}, "Rain chance, next 2 h"), h("dd", {}, w.prob2h == null ? "-" : `${fx(w.prob2h, 0)}%`),
+        h("dt", {}, "Radar frame"), h("dd", {}, w.radarTime ? ((t) => (t.same ? t.mine : `${t.track} circuit · ${t.mine} yours`))(mod.dualTime(w.radarTime, w.tz)) : "-")),
+      clock,
+      hours.length ? h("div", { class: "wx-hours", role: "img", "aria-label": "Rain chance for the next hours, in circuit time" }, hours.map((x) => h("div", { "data-tip": `${hour(x.t).text}: ${x.prob ?? "?"}% chance, ${fx(x.mm, 1)} mm` },
+        h("i", { style: `height:${Math.max(4, (x.mm / mx) * 100)}%` }), h("b", {}, x.prob == null ? "-" : `${x.prob}%`), h("span", {}, hour(x.t).track || hour(x.t).mine)))) : null,
+      hours.length && !hour(hours[0].t).same ? h("p", { class: "sub", style: "margin-top:6px" }, "Hours are circuit time; hover a bar for your time.") : null,
+      sk ? h("p", { class: "sub", style: "margin-top:6px", "data-tip": "Critical success index: rain areas forecast correctly ÷ (correct + missed + false alarms), over the last two hours of scans" },
+        `Forecast check, last two hours: ${fx(sk.csi * 100, 0)}% of rain areas right at +30 min (${fx(sk.persistence * 100, 0)}% if the rain had simply stayed put)${skill.m60 ? `; ${fx(skill.m60.csi * 100, 0)}% at +60 min` : ""}.`) : null);
+    };
+    return mod.mountRadar(map, { ...G, onUpdate: show }).then((r) => { show(r.weather); state.radar = { dispose() { clearInterval(timer); r.dispose(); } }; });
+  }).catch((err) => { map.replaceChildren(h("div", { class: "wx-wait" }, "Live radar unavailable right now.")); console.info("weather:", err.message); });
+  return el;
+}
+/* ------------------------------------------------------------------ WEATHER TYRE PLAN
+   Rule-based, from the rain forecast for the race window (15-minute steps) plus the live radar:
+     wet lap   = rain of WET_MMH or more in that lap's slot (or rain on the radar right now)
+     drying    = DRY_LAPS laps after the rain stops, still on intermediates
+     dry laps  = the fastest dry plan for the laps that are left, with the sets each driver has
+   The two-compound rule only applies when no wet-weather tyre is used. No simulation is involved. */
+const WET_MMH = 0.3, FULL_WET_MMH = 6, DRY_LAPS = 6, WET_LAP = 1.13;
+function nearestNowcast(w, t) {
+  const nc = w.nowcast || [];
+  if (!nc.length || t < nc[0].t - 60000 || t > nc[nc.length - 1].t + 60000) return null;
+  return nc[Math.max(0, Math.min(nc.length - 1, Math.round((t - nc[0].t) / 60000)))];
+}
+function trackTimeline(nx, w) {
+  const c = nx.circuit, N = c.n_laps, start = Date.parse(nx.meta.sessions?.R || "");
+  if (!Number.isFinite(start) || !w?.slots?.length) return null;
+  const rate = (t) => { let s = null; for (const x of w.slots) if (x.t <= t) s = x; else break; return s ? s.mm * 4 : null; };
+  const now = Date.now(), laps = [];
+  let t = start, lastWet = -99, covered = 0;
+  for (let i = 1; i <= N; i++) {
+    let r = rate(t);
+    if (r != null) covered++;
+    if (w.kind === "wet" && Math.abs(t - now) < 12 * 60000) r = Math.max(r ?? 0, WET_MMH);     // radar says it is raining now
+    const nc = nearestNowcast(w, t);              // within the radar forecast's hour, it overrides the coarser model forecast
+    if (nc) r = nc.wet ? Math.max(r ?? 0, WET_MMH) : Math.abs(t - now) < 12 * 60000 && w.kind === "wet" ? r : 0;
+    const wet = (r ?? 0) >= WET_MMH;
+    if (wet) lastWet = i;
+    const state = wet ? ((r ?? 0) >= FULL_WET_MMH ? "full" : "wet") : i - lastWet <= DRY_LAPS && lastWet > 0 ? "drying" : "dry";
+    laps.push({ lap: i, t, rate: r, state });
+    t += c.base_lap * (state === "dry" ? 1 : WET_LAP) * 1000;
+  }
+  return covered < N * 0.6 ? null : { laps, start, end: t, anyWet: laps.some((l) => l.state !== "dry") };
+}
+// fastest dry plan for n laps: compounds, stint lengths and time, with the sets available
+function dryPlan(c, n, have, needTwo, maxStops = 2) {
+  if (n <= 0) return null;
+  const comps = ["SOFT", "MEDIUM", "HARD"], MIN = Math.min(6, Math.max(1, Math.floor(n / 3)));
+  const cum = {};
+  for (const k of comps) { const a = [0]; for (let age = 1; age <= n + 45; age++) { const over = Math.max(0, age - 0.9 * (c.max_stint?.[k] ?? 40)); a.push(a[age - 1] + (c.offset?.[k] ?? 0) + (c.deg?.[k] ?? 0.05) * age + 0.04 * over * over); } cum[k] = a; }
+  const avail = Object.fromEntries(comps.map((k) => [k, have ? [...Array(have.new?.[k] ?? 0).fill(0), ...(have.used || []).filter((u) => u.compound === k).map((u) => u.laps).sort((a, b) => a - b)] : Array(4).fill(0)]));
+  const cost = (k, age0, L) => cum[k][age0 + L] - cum[k][age0];
+  let best = null;
+  const tryPlan = (seq) => {
+    const left = Object.fromEntries(comps.map((k) => [k, avail[k].slice()])), ages = [];
+    for (const k of seq) { if (!left[k].length) return; ages.push(left[k].shift()); }
+    if (needTwo && new Set(seq).size < 2) return;
+    const m = seq.length, pit = (m - 1) * c.pit_loss;
+    const rec = (i, used, tsum, lens) => {
+      if (i === m - 1) { const L = n - used; if (L < MIN) return; const T = tsum + cost(seq[i], ages[i], L) + pit; if (!best || T < best.time) best = { seq, lens: [...lens, L], time: T, ages }; return; }
+      for (let L = MIN; L <= n - used - MIN * (m - 1 - i); L += m > 2 ? 2 : 1) rec(i + 1, used + L, tsum + cost(seq[i], ages[i], L), [...lens, L]);
+    };
+    rec(0, 0, 0, []);
+  };
+  const gen = (seq, depth) => { if (seq.length) tryPlan(seq); if (depth < maxStops + 1) for (const k of comps) gen([...seq, k], depth + 1); };
+  gen([], 0);
+  return best;
+}
+// phases across the race: wet-tyre phases from the timeline, dry phases filled by dryPlan
+function weatherPlan(nx, TL, have, cc) {
+  const c = cc || nx.circuit, N = c.n_laps, segs = [];
+  for (const l of TL.laps) { const kind = l.state === "dry" ? "dry" : l.state === "full" ? "W" : "I"; const s = segs[segs.length - 1]; if (s && s.kind === kind) s.to = l.lap; else segs.push({ kind, from: l.lap, to: l.lap }); }
+  // very short dry gaps between showers are not worth two stops: stay on intermediates
+  for (let i = 1; i < segs.length - 1; i++) if (segs[i].kind === "dry" && segs[i].to - segs[i].from + 1 < 8) segs[i].kind = "I";
+  const merged = [];
+  for (const s of segs) { const p = merged[merged.length - 1]; if (p && p.kind === s.kind) p.to = s.to; else merged.push({ ...s }); }
+  const wetUsed = merged.some((s) => s.kind !== "dry"), left = have ? { new: { ...have.new }, used: [...(have.used || [])] } : null, out = [];
+  for (const s of merged) {
+    const n = s.to - s.from + 1;
+    if (s.kind !== "dry") { out.push({ tyre: s.kind, from: s.from, to: s.to }); continue; }
+    const p = dryPlan(c, n, left, !wetUsed, merged.length > 1 ? 1 : 2);
+    if (!p) { out.push({ tyre: "?", from: s.from, to: s.to }); continue; }
+    let a = s.from;
+    p.seq.forEach((k, i) => { out.push({ tyre: k[0], from: a, to: a + p.lens[i] - 1 }); a += p.lens[i];
+      if (left) { if (p.ages[i] === 0 && left.new[k] > 0) left.new[k]--; else { const j = left.used.findIndex((u) => u.compound === k && u.laps === p.ages[i]); if (j >= 0) left.used.splice(j, 1); } } });
+  }
+  return { phases: out, stops: out.length - 1, label: out.map((p) => p.tyre).join("-") };
+}
+const PHASE_NAME = { S: "Soft", M: "Medium", H: "Hard", I: "Intermediate", W: "Full wet" };
+function planLane(plan, N) {
+  const track = h("div", { class: "lane-track" });
+  for (const p of plan.phases) track.append(h("div", { class: `lane-stint ${p.tyre}`, style: `left:calc(${((p.from - 1) / N) * 100}% + 1px);width:calc(${((p.to - p.from + 1) / N) * 100}% - 2px)`,
+    "data-tip": `${PHASE_NAME[p.tyre] || p.tyre} · laps ${p.from}-${p.to}` }));
+  return track;
+}
+// Strategy page: what the live weather means for the plans (history of wet races, not simulation)
+function weatherStrategyEl(nx, fpView) {
+  const G = nx.geo, R = nx.weather_ref, est = fpView ? nx.meta.tyres?.practice_wear?.estimate : null;
+  const c = est ? { ...nx.circuit, deg: { ...nx.circuit.deg, ...est } } : nx.circuit;      // follows the Model / practice-wear toggle
+  if (!G || !R?.wet || !R?.dry) return null;
+  const body = h("div", {}, h("p", { class: "sub" }, "Checking live weather…"));
+  const el = panel("Weather and strategy", "live conditions at the circuit · what rain has changed in past races", body);
+  if (state.wxStop) { state.wxStop(); state.wxStop = null; }
+  import("./weather.js").then((mod) => { state.wxStop = mod.watchWeather(G, (w) => {
+    if (!w.ok) { body.replaceChildren(h("p", { class: "sub" }, "Live weather unavailable right now. The plans below assume a dry race.")); return; }
+    const ref = c.base_lap * 0.985;         // a good dry race lap here (the model's base lap is the field median)
+    const toS = R.to_slicks, toI = R.to_inters;
+    const lines = [];
+    if (w.kind === "dry") lines.push("No rain near the circuit and little in the forecast: the dry-tyre plans on this page apply.");
+    if (w.kind === "threat") lines.push(
+      `Showers are ${w.nearestKm != null ? `${fx(w.nearestKm, 0)} km from the circuit` : "in the forecast"}${w.prob2h != null ? `, with a ${fx(w.prob2h, 0)}% chance of rain in the next two hours` : ""}. The dry-tyre plans still apply, but teams will keep their stops flexible to cover a shower.`,
+      toI ? `If rain arrives: drivers on slicks have pitted for intermediates once their laps were about ${fx((toI.ratio - 1) * 100, 0)}% off dry pace (roughly ${lapClock(ref * toI.ratio)} laps here).` : null);
+    if (w.kind === "wet") lines.push(
+      "Rain at the circuit: the dry-tyre plans and stop counts on this page are on hold while the track is wet. On intermediates or wets the two-compound rule does not apply.",
+      toS ? `Back to slicks: teams have switched when intermediate laps came within about ${fx((toS.ratio - 1) * 100, 0)}% of dry pace (roughly ${lapClock(ref * toS.ratio)} laps here; range ${fx((toS.lo - 1) * 100, 0)}-${fx((toS.hi - 1) * 100, 0)}%). ${nx.meta.tyres?.dynamics?.kind === "undercut" ? "This is an undercut track, so the first car onto slicks at the right moment usually gains." : ""}` : null,
+      toI ? `If it dries and rain returns: slicks give way to intermediates at about ${fx((toI.ratio - 1) * 100, 0)}% off dry pace.` : null);
+    if (w.kind !== "dry") lines.push(`In rain-affected races a safety car or red flag has come out ${pct(R.wet.any_sc)} of the time (${pct(R.dry.any_sc)} in dry races), and ${pct(R.wet.dnf)} of cars retired (${pct(R.dry.dnf)} dry): cheap stops under a safety car matter more than tyre wear.`);
+    // tyre plan for the forecast conditions (only while the race is still to come or under way)
+    const TL = trackTimeline(nx, w), N = c.n_laps, live = TL && Date.now() < TL.end + 20 * 60000;
+    let planEl = null;
+    if (live) {
+      const gen = weatherPlan(nx, TL, null, c), states = [];
+      for (const l of TL.laps) { const p = states[states.length - 1]; if (p && p.state === l.state) p.to = l.lap; else states.push({ state: l.state, from: l.lap, to: l.lap }); }
+      const SN = { dry: "Dry", drying: "Drying", wet: "Wet", full: "Heavy rain" };
+      const bar = h("div", { class: "lane-track wx-track", role: "img", "aria-label": "Expected track conditions by lap" }, states.map((p) => h("div", { class: `wx-seg ${p.state}`,
+        style: `left:calc(${((p.from - 1) / N) * 100}% + 1px);width:calc(${((p.to - p.from + 1) / N) * 100}% - 2px)`, "data-tip": `${SN[p.state]} · laps ${p.from}-${p.to}` })));
+      const first = gen.phases[0], sw = gen.phases.find((p) => "SMH".includes(p.tyre) && p.from > 1 && gen.phases.some((q) => "IW".includes(q.tyre) && q.to === p.from - 1));
+      const dryN = gen.phases.filter((p) => "SMH".includes(p.tyre)).length;
+      const say = !TL.anyWet ? `The forecast keeps the race dry: ${gen.label} is the fastest plan.`
+        : `${"IW".includes(first.tyre) ? `Start on ${PHASE_NAME[first.tyre].toLowerCase()}s` : `Start on ${PHASE_NAME[first.tyre].toLowerCase()}s; rain is expected from lap ${gen.phases.find((p) => "IW".includes(p.tyre)).from}`}` +
+          `${sw ? `, slicks around lap ${sw.from}` : ", with no dry window long enough for slicks"}. With a wet tyre used, the two-compound rule no longer applies${!sw ? "" : dryN === 1 ? `, so one set of ${PHASE_NAME[sw.tyre].toLowerCase()}s can run to the end if it lasts` : `; the dry laps are still quickest split over ${dryN} stints`}.`;
+      const TS = nx.tyre_sets?.drivers, all = TS && TL.anyWet ? nx.drivers.filter((d) => TS[d.Driver]).map((d) => ({ d, p: weatherPlan(nx, TL, TS[d.Driver], c) })) : [];
+      const sig = (p) => p.phases.map((x) => `${x.tyre}${x.to - x.from + 1}`).join("-"), rows = all.filter((r) => sig(r.p) !== sig(gen));   // only drivers whose sets force a different plan
+      planEl = h("div", { class: "wx-plan" },
+        h("h3", {}, "Tyre plan for these conditions"),
+        h("div", { class: "wx-lanes" },
+          h("div", { class: "wx-lane" }, h("span", {}, "Track"), bar),
+          h("div", { class: "wx-lane" }, h("span", {}, "Tyres"), planLane(gen, N)),
+          h("div", { class: "wx-lane wx-axis" }, h("span", {}), h("div", {}, [1, Math.round(N / 4), Math.round(N / 2), Math.round((3 * N) / 4), N].map((l) => h("i", {}, "L" + l))))),
+        h("div", { class: "legend" }, [["wet", "Wet"], ["drying", "Drying"], ["dry", "Dry"]].map(([k, l]) => h("span", {}, h("i", { class: `wx-seg ${k}`, style: "position:static;display:inline-block;width:12px;height:12px;border-radius:3px" }), l)),
+          h("span", {}, h("i", { style: "background:#22c55e" }), "Intermediate"), ["S", "M", "H"].map((k) => h("span", {}, h("i", { style: `background:${COMP_COLOR[k]}` }), COMP[k]))),
+        h("p", { class: "explain" }, say, est ? " Stint lengths use this weekend's practice tyre wear." : ""),
+        all.length && !rows.length ? h("p", { class: "sub" }, "Every driver has the sets for this plan.") : null,
+        rows.length ? h("p", { class: "sub" }, `${rows.length} driver${rows.length === 1 ? "" : "s"} lack the sets for it and would run:`) : null,
+        rows.length ? table(rows, [
+          { id: "drv", label: "Driver", render: (r) => drvCell(r.d.Driver, r.d.Team, SHORT[r.d.Team] || r.d.Team, 26) },
+          { id: "plan", label: "Plan with their sets", render: (r) => h("span", {}, tyres(r.p.label), h("span", { class: "strat-txt" }, r.p.phases.map((x) => x.to - x.from + 1).join(" / "))) },
+          { id: "st", label: "Stops", num: true, render: (r) => r.p.stops }], { key: "wxplan", onRow: (r) => openDriver(r.d.Driver) }) : null,
+        h("p", { class: "sub" }, `Rule-based, not simulated: for the next hour a lap is wet when the radar forecast puts rain over the circuit; beyond that, with ${WET_MMH} mm/h or more of rain in the weather-model forecast (or rain on the radar now), the track is treated as drying for ${DRY_LAPS} laps after rain stops, and the dry laps use the fastest plan for each driver's remaining sets. A 15-minute forecast cannot time a single shower to the lap.`));
+    }
+    body.replaceChildren(
+      h("div", { class: `wx-now ${WX_CLASS[w.kind]}` }, h("b", {}, WX_LABEL[w.kind]),
+        h("span", {}, w.precipNow >= 0.05 ? `${fx(w.precipNow * 4, 1)} mm/h now` : w.kind === "wet" ? "shower on radar" : "no rain now", w.nearestKm != null ? ` · nearest rain ${w.nearestKm < 2 ? "overhead" : fx(w.nearestKm, 0) + " km"}` : "", w.prob2h != null ? ` · ${fx(w.prob2h, 0)}% next 2 h` : "")),
+      planEl,
+      ...lines.filter(Boolean).map((t) => h("p", { class: "explain" }, t)),
+      h("p", { class: "sub" }, `From ${R.wet.n} wet and ${R.dry.n} dry races in the data; the race simulation itself has no wet mode, so win and podium odds assume a dry race.`));
+  }); }).catch(() => body.replaceChildren(h("p", { class: "sub" }, "Live weather unavailable right now. The plans below assume a dry race.")));
+  return el;
 }
 // after qualifying: the dry sets each driver has left, and the fastest plan those sets allow
 function tyreSetsPanel(nx, fpView) {
@@ -1011,8 +1238,6 @@ const CAR_ICON = {
   next: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2"/></svg>',
   pause: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14M16 5v14" fill="none" stroke="currentColor" stroke-width="2.4"/></svg>',
   play: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5l12 7-12 7z" fill="currentColor"/></svg>',
-  sound: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M16 9a4 4 0 010 6M18.5 6.5a7.5 7.5 0 010 11" fill="none" stroke="currentColor" stroke-width="2"/></svg>',
-  muted: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M16 9l6 6M22 9l-6 6" fill="none" stroke="currentColor" stroke-width="2"/></svg>',
 };
 function garageEl(T) {
   if (state.car3) { state.car3.dispose(); state.car3 = null; }
@@ -1028,12 +1253,10 @@ function garageEl(T) {
   const idxV = h("span", { "data-scramble": "" }), nameV = h("h2", { id: "car3-title" }), dl = h("dl", { class: "c3-tr" }), drv = h("div", { class: "car3-drivers", role: "group", "aria-label": "Car shown" });
   const logoBox = h("div", { class: "c3-fallback car3-logo" });
   const status = h("span", { class: "car3-status", role: "status" });
+  const wip = h("span", { class: "chip warn car3-wip", hidden: true, "data-tip": "This team has no dedicated 3D model yet: it shares the generic 2026 body, with a livery painted by this site" }, "Model in progress");
   const playBtn = h("button", { type: "button", class: "car3-btn", onclick: () => { playing = !playing; ctrl?.setAuto(playing); syncPlay(); } });
   const syncPlay = () => { playBtn.innerHTML = playing ? CAR_ICON.pause : CAR_ICON.play; playBtn.setAttribute("aria-label", playing ? "Pause the car rotation" : "Cycle through the cars"); };
   syncPlay();
-  // wheel-gun sound during the transition (garage3d's wheelgun.js; the choice is remembered)
-  const soundBtn = h("button", { type: "button", class: "car3-btn", hidden: true, onclick: () => { ctrl?.sound.setMuted(!ctrl.sound.muted); syncSound(); } });
-  const syncSound = () => { const m = !ctrl || ctrl.sound.muted; soundBtn.innerHTML = m ? CAR_ICON.muted : CAR_ICON.sound; soundBtn.setAttribute("aria-label", m ? "Turn on the wheel-gun sound" : "Mute the wheel-gun sound"); soundBtn.setAttribute("aria-pressed", String(!m)); };
   const go = (j) => { j = (j + teams.length) % teams.length; if (ctrl) ctrl.go(j); else update(j); };
   const strip = h("div", { class: "car3-strip", role: "group", "aria-label": "Choose a car" }, teams.map((x, j) => h("button", {
     type: "button", class: "pill-toggle", style: `--team:${x.color}`, "aria-pressed": "false", onclick: () => go(j),
@@ -1041,7 +1264,7 @@ function garageEl(T) {
   const el = h("section", { class: "c3 car3", "aria-labelledby": "car3-title" },
     logoBox,
     h("div", { class: "c3-hud" },
-      h("div", { class: "c3-tl" }, idxV, nameV),
+      h("div", { class: "c3-tl" }, idxV, nameV, wip),
       dl,
       h("div", { class: "c3-bl" }, drv, h("p", {}, nerd()
         ? "Community 3D models (CC BY, credited below), split into components for the transition. Four cars carry their author's livery textures; the rest share the FIA 2026 show-car body with liveries painted by this site's pipeline (plain-text sponsor names). Not team CAD."
@@ -1051,8 +1274,7 @@ function garageEl(T) {
         h("div", { class: "car3-btns" },
           h("button", { type: "button", class: "car3-btn", "aria-label": "Previous car", html: CAR_ICON.prev, onclick: () => go((ctrl ? ctrl.index : i) - 1) }),
           reduced() ? null : playBtn,
-          h("button", { type: "button", class: "car3-btn", "aria-label": "Next car", html: CAR_ICON.next, onclick: () => go((ctrl ? ctrl.index : i) + 1) }),
-          reduced() ? null : soundBtn),
+          h("button", { type: "button", class: "car3-btn", "aria-label": "Next car", html: CAR_ICON.next, onclick: () => go((ctrl ? ctrl.index : i) + 1) })),
         h("span", { class: "c3-hint" }, "Drag to rotate"))));
   function drivers(j) {
     const x = teams[j];
@@ -1078,6 +1300,7 @@ function garageEl(T) {
     drivers(j);
     logoBox.replaceChildren(teamLogo(x.team, 96) || h("b", {}, x.label));
     strip.querySelectorAll("button").forEach((b, k) => b.setAttribute("aria-pressed", String(k === j)));
+    wip.hidden = ctrl?.source?.(j) !== "fia_repaint";      // cars without their own model yet
   }
   update(i);
   const io = new IntersectionObserver(([e]) => {
@@ -1089,7 +1312,7 @@ function garageEl(T) {
       manifestUrl: "assets/cars/manifest.json", start: i, auto: playing, onChange: update,
       onState: (st) => { el.classList.toggle("loading", !!st.loading); status.textContent = st.error ? "Could not load that car" : st.loading ? "Loading car…" : ""; if (st.error) setTimeout(() => { if (status.textContent.startsWith("Could")) status.textContent = ""; }, 4000); },
     }))
-      .then((c) => { ctrl = c; state.car3 = c; el.classList.remove("loading"); el.classList.add("live"); update(c.index); showCredits(c.credits); if (c.sound) { soundBtn.hidden = false; syncSound(); } })
+      .then((c) => { ctrl = c; state.car3 = c; el.classList.remove("loading"); el.classList.add("live"); update(c.index); showCredits(c.credits); })
       .catch((err) => { el.classList.remove("loading"); el.classList.add("flat"); console.info("3D car unavailable, showing the team badge:", err.message); });
   }, { rootMargin: "300px 0px" });
   io.observe(el);
@@ -1112,7 +1335,7 @@ function renderTeams(root) {
   const drivers = (team) => (state.data.standings.drivers || []).filter((d) => d.Team === team).slice(0, 2);
   root.append(sectionHead(["Rating ", em("the cars")], "Each car's pace with the drivers taken out, plus reliability, conversion of pace into results, pit work and in-season development. 50 is an average team."));
   // the 3D garage is a work in progress: published builds switch it off (web/scripts/publish-portfolio.sh)
-  if (document.querySelector('meta[name="f1h-garage"]')?.content !== "off") root.append(garageEl(T));
+  if (garageOn()) root.append(garageEl(T));
   const cards = stagger(h("div", { class: "stack" }, T.map((t, i) => h("div", { class: "teamcard", style: `--team:${teamColor(t.Team)}` },
     h("div", { class: "rank" }, i + 1),
     h("div", {}, h("div", { class: "tname" }, teamLogo(t.Team, 26), t.Team), h("div", { class: "tdrivers" }, drivers(t.Team).map((d) => h("button", { type: "button", class: "chipbtn", onclick: () => openDriver(d.Driver) }, avatar(d.Driver, 26, t.Team), d.Driver)),
@@ -1309,6 +1532,11 @@ function armReveals(root) {
 }
 function rerender() {
   const y = window.scrollY;
+  // live-weather watchers belong to the view being replaced: stop them (the new view starts its own)
+  if (state.radar) { state.radar.dispose(); state.radar = null; }
+  if (state.wxStop) { state.wxStop(); state.wxStop = null; }
+  if (state.heroCar) { state.heroCar.dispose(); state.heroCar = null; }
+  if (state.car3) { state.car3.dispose(); state.car3 = null; }
   for (const [k, fn] of Object.entries(RENDER)) {
     const root = $(`#view-${k}`); root.innerHTML = "";
     if (k === state.tab) { try { fn(root); if (!window.gsap) armReveals(root); document.dispatchEvent(new CustomEvent("view:render", { detail: { tab: k, root, mode: state.mode } })); } catch (e) { console.error(e); root.append(h("div", { class: "empty" }, "Could not render this view. Reload the page; if it persists, re-run python -m flatout export. (" + e.message + ")")); } }
