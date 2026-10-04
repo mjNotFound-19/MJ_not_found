@@ -380,9 +380,9 @@ function heroCarEl(fav) {
   const S = state.data.standings?.drivers || [], ds = S.filter((d) => d.Team === fav.Team).slice(0, 2);
   const drivers = ds.map((d) => ({ code: d.Driver, name: name(d.Driver), number: person(d.Driver).number ?? "" }));
   const el = h("div", { class: "c3 hero-car", "aria-hidden": "true" });
-  const start = () => import("./garage3d.js?v=a4b3d01448").then((mod) => mod.mount(el, {
+  const start = () => import("./garage3d.js?v=d4830b7b0b").then((mod) => mod.mount(el, {
     teams: [{ team: fav.Team, label: SHORT[fav.Team] || fav.Team, color: teamColor(fav.Team), drivers, driver: Math.max(0, drivers.findIndex((d) => d.code === fav.Driver)) }],
-    manifestUrl: "assets/cars/manifest.json?v=a4b3d01448", start: 0, auto: false, quality: "mobile", view: { az: 0.74, tilt: 0.17, zoom: 0.93, sway: 0.14 } }))
+    manifestUrl: "assets/cars/manifest.json?v=d4830b7b0b", start: 0, auto: false, quality: "mobile", view: { az: 0.74, tilt: 0.17, zoom: 0.93, sway: 0.14 } }))
     .then((c) => { if (!el.isConnected) { c.dispose(); return; } state.heroCar = c; el.classList.add("live"); })
     .catch((err) => { el.remove(); console.info("hero car unavailable:", err.message); });
   (window.requestIdleCallback || ((f) => setTimeout(f, 600)))(start);      // after the first paint
@@ -489,7 +489,7 @@ function circuit3dEl(nx, fav) {
   const io = new IntersectionObserver(([e]) => {
     if (!e.isIntersecting) return;
     io.disconnect();
-    import("./circuit3d.js?v=a4b3d01448").then((mod) => mod.mount(el, t, {
+    import("./circuit3d.js?v=d4830b7b0b").then((mod) => mod.mount(el, t, {
       accent: teamColor(fav.Team),
       onSpeed: (v, k) => { speedV.textContent = v; speedBar.style.transform = `scaleX(${Math.max(0.04, k)})`; const [r, g, b] = mod.speedColor(k); speedBar.style.background = `rgb(${r * 255 | 0},${g * 255 | 0},${b * 255 | 0})`; },
     })).then((dispose) => { el.classList.add("live"); state.c3dispose = dispose; })
@@ -517,18 +517,30 @@ function lcdPrint(con, lines) {
     if (c >= t.length) { r += 1; c = 0; }
   }, 14);
 }
-function consoleEl(nx) {
+// res: set after a race, when the console reads out the result (drivers carry finish, grid, points and their forecast `f`)
+function consoleEl(nx, res = null) {
   const m = nx.meta, D = nx.drivers;
-  const byWin = D.slice().sort((a, b) => b.win - a.win);
+  const byWin = D.slice().sort(res ? (a, b) => a.finish - b.finish : (a, b) => b.win - a.win);
+  const fin = (d) => (d.classified ? `P${d.finish}` : "DNF"), moved = (d) => { const v = d.grid - d.finish; return !d.classified ? d.status.toUpperCase() : v > 0 ? `+${v} PLACES` : v < 0 ? `${v} PLACES` : "HELD PLACE"; };
   const avg = (k) => D.reduce((a, d) => a + d[k], 0) / D.length;
   const angle = (v) => `${-135 + 270 * Math.max(0, Math.min(1, v))}deg`;
-  const intro = [
+  const intro = res ? [
+    { t: "F1.H RACE RESULT", dim: true },
+    { t: `${m.event.toUpperCase()}  ${res.n_laps} LAPS` },
+    { t: `STATUS: ${res.provisional ? "PROVISIONAL" : "OFFICIAL"}${res.wet ? "   WET RACE" : ""}` },
+    { t: "> PRESS A DRIVER KEY", dim: true },
+  ] : [
     { t: "F1.H SIM ENGINE v3" , dim: true },
     { t: `${m.event.toUpperCase()}  ${Number(m.n_sims).toLocaleString()} RACES` },
     { t: `STATUS: ${(MODE_LABEL[m.mode] || m.mode).toUpperCase()}` },
     { t: "> PRESS A DRIVER KEY", dim: true },
   ];
-  const readout = (d) => [
+  const readout = (d) => res ? [
+    { t: `> ${d.Driver}  ${name(d.Driver).toUpperCase()}`, dim: true },
+    { t: `FINISHED ${fin(d)}   GRID P${d.grid}   ${moved(d)}${d.points ? `   ${fx(d.points, 0)} PTS` : ""}` },
+    { t: d.f ? `FORECAST AVG P${fx(d.f.exp_pos, 1)}   WIN ${pct(d.f.win)}   PODIUM ${pct(d.f.podium)}` : "NO FORECAST FOR THIS DRIVER" },
+    { t: `TYRES ${d.strategy || "-"}   ${Math.max(0, (d.strategy || "").split("-").length - 1)}-STOP   ${d.laps_done} LAPS` },
+  ] : [
     { t: `> ${d.Driver}  ${name(d.Driver).toUpperCase()}`, dim: true },
     { t: `WIN ${pct(d.win)}   PODIUM ${pct(d.podium)}   POINTS ${pct(d.points)}` },
     { t: `AVG P${fx(d.exp_pos, 1)}   RANGE P${d.p10}-P${d.p90}   DNF ${pct(d.dnf)}` },
@@ -546,7 +558,7 @@ function consoleEl(nx) {
   };
   const carNo = (d) => parseInt(person(d.Driver).number, 10) || 999;
   D.slice().sort((a, b) => carNo(a) - carNo(b)).forEach((d) => keys.append(h("button", { type: "button", class: "key", "data-d": d.Driver, style: `--team:${teamColor(d.Team)}`, "aria-pressed": "false",
-    "aria-label": `${name(d.Driver)}, ${pct(d.win)} to win`, onclick: () => { stopAuto(); select(d); } }, h("i", { "aria-hidden": "true" }), h("em", { class: "kn", "aria-hidden": "true" }, person(d.Driver).number || ""), d.Driver, h("small", {}, pct(d.win)))));
+    "aria-label": res ? `${name(d.Driver)}, ${d.classified ? `finished P${d.finish}` : "did not finish"}` : `${name(d.Driver)}, ${pct(d.win)} to win`, onclick: () => { stopAuto(); select(d); } }, h("i", { "aria-hidden": "true" }), h("em", { class: "kn", "aria-hidden": "true" }, person(d.Driver).number || ""), d.Driver, h("small", {}, res ? fin(d) : pct(d.win)))));
   const auto = h("button", { type: "button", class: "c-btn", "aria-pressed": "false" }, h("span", { class: "led", "aria-hidden": "true" }), "Autoplay");
   let idx = 0;
   function stopAuto() { clearInterval(con._auto); auto.setAttribute("aria-pressed", "false"); }
@@ -567,13 +579,22 @@ function consoleEl(nx) {
     };
     return { el, set };
   };
-  const margin = byWin[0].win - byWin[1].win;
-  const raceDials = [
+  const margin = res ? 0 : byWin[0].win - byWin[1].win;
+  const nFin = D.filter((d) => d.classified).length, mv = res ? D.reduce((a, d) => a + Math.abs(d.grid - d.finish), 0) / D.length : 0;
+  const raceDials = res ? [
+    [nFin / D.length, `${nFin}/${D.length}`, "Finishers", "cars classified at the finish"],
+    [Math.min(1, (res.sc + res.red) / 4), String(res.sc + res.red), "Safety cars", "safety cars and red flags in the race"],
+    [Math.min(1, mv / 8), fx(mv, 1), "Places moved", "average places gained or lost from the grid"],
+  ] : [
     [m.p_sc, pct(m.p_sc), "Safety car", "chance of at least one safety car or red flag"],
     [avg("stop2") + avg("stop3p"), pct(avg("stop2") + avg("stop3p")), "Two stops+", "share of cars making two or more stops"],
     [Math.min(1, margin / 0.2), `+${fx(margin * 100, 1)}`, "Fav. margin", "favourite's win chance minus the next driver's, in points"],
   ];
-  const driverDials = (d) => [
+  const driverDials = (d) => res ? [
+    [(D.length - d.finish) / (D.length - 1), fin(d), "Finished", `${name(d.Driver)}: finishing position`],
+    [(D.length - d.grid) / (D.length - 1), `P${d.grid}`, "Grid", `${name(d.Driver)}: starting position`],
+    [d.f ? (D.length - d.f.exp_pos) / (D.length - 1) : 0, d.f ? `P${fx(d.f.exp_pos, 1)}` : "-", "Forecast", `${name(d.Driver)}: average finishing position in the forecast`],
+  ] : [
     [d.podium, pct(d.podium), "Podium", `${name(d.Driver)}: chance of a top-3 finish`],
     [d.points, pct(d.points), "Points", `${name(d.Driver)}: chance of finishing in the top 10`],
     [(D.length - d.exp_pos) / (D.length - 1), `P${fx(d.exp_pos, 1)}`, "Avg finish", `${name(d.Driver)}: average finishing position over all simulations`],
@@ -617,7 +638,7 @@ function camEl() {
       if (my !== token) return;
       layer.replaceChildren(img || h("div", { class: "ini" }, d.Driver));
       num.textContent = p.number || "";
-      tag.replaceChildren(h("b", {}, d.Driver), h("span", {}, `${pct(d.win)} win`));
+      tag.replaceChildren(h("b", {}, d.Driver), h("span", {}, d.camTag || `${pct(d.win)} win`));
     };
     setTimeout(swap, reduced() ? 0 : 140);
   };
@@ -853,7 +874,8 @@ function renderResult(root) {
   }))));
   // circuit map and live radar need the same fields as a forecast
   const px = L.meta ? { meta: L.meta, circuit: L.circuit_params || {}, track: L.track, geo: L.geo } : null;
-  root.append(hero, h("div", { class: "grid g-main" }, h("div", { class: "stack" }, podium, has ? scoreEl(L, R, F) : null), orderPanel),
+  const con = consoleEl({ meta: { event: L.title }, drivers: R.map((d) => ({ ...d, strategy: (F[d.Driver]?.actual_strategy || d.strategy || "").split("-").map((c) => (COMP[c] ? c : "?")).join("-"), f: F[d.Driver], camTag: d.classified ? `finished P${d.finish}` : "did not finish" })) }, L);
+  root.append(hero, con, h("div", { class: "grid g-main" }, h("div", { class: "stack" }, podium, has ? scoreEl(L, R, F) : null), orderPanel),
     garageOn() && state.data.constructors?.length ? h("div", { class: "mt" }, sectionHead(["The ", em("garage")], "All eleven 2026 cars in 3D. Drag to turn one around, or let it come apart and rebuild as the next."), garageEl(state.data.constructors)) : null,
     px ? circuit3dEl(px, win) : null,
     px ? weatherEl(px) : null);
@@ -996,7 +1018,7 @@ function weatherEl(nx) {
   const el = h("div", { class: "mt" }, panel("Live weather at the circuit", "rain radar: last two hours, now and a one-hour forecast, minute by minute · drag to move, pinch or ctrl + scroll to zoom",
     h("div", { class: "wx" }, map, stats),
     h("p", { class: "sub" }, "Radar: RainViewer · Map: © OpenStreetMap contributors · Conditions and forecast: Open-Meteo · Circuit outline: OpenStreetMap or f1-circuits (MIT). The timeline runs minute by minute: radar scans arrive every 10 minutes, the minutes between them are filled by moving the rain along its tracked motion, and the amber part is a one-hour forecast (block-correlation motion field, semi-Lagrangian advection, blurred as the lead time grows). It cannot predict showers growing or dying. Small showers can sit between radar pixels (about 1 km).")));
-  import("./weather.js?v=a4b3d01448").then((mod) => {
+  import("./weather.js?v=d4830b7b0b").then((mod) => {
     let tz = null, timer = null;
     // live clocks: the circuit's local time and this device's time
     const clock = h("div", { class: "wx-clock" }), tick = () => {
@@ -1121,7 +1143,7 @@ function weatherStrategyEl(nx, fpView) {
   const body = h("div", {}, h("p", { class: "sub" }, "Checking live weather…"));
   const el = panel("Weather and strategy", "live conditions at the circuit · what rain has changed in past races", body);
   if (state.wxStop) { state.wxStop(); state.wxStop = null; }
-  import("./weather.js?v=a4b3d01448").then((mod) => { state.wxStop = mod.watchWeather(G, (w) => {
+  import("./weather.js?v=d4830b7b0b").then((mod) => { state.wxStop = mod.watchWeather(G, (w) => {
     if (!w.ok) { body.replaceChildren(h("p", { class: "sub" }, "Live weather unavailable right now. The plans below assume a dry race.")); return; }
     const ref = c.base_lap * 0.985;         // a good dry race lap here (the model's base lap is the field median)
     const toS = R.to_slicks, toI = R.to_inters;
@@ -1426,9 +1448,9 @@ function garageEl(T) {
     if (!e.isIntersecting) return;
     io.disconnect();
     el.classList.add("loading");
-    import("./garage3d.js?v=a4b3d01448").then((mod) => mod.mount(el, {
+    import("./garage3d.js?v=d4830b7b0b").then((mod) => mod.mount(el, {
       teams: teams.map((x) => ({ team: x.team, label: x.label, color: x.color, drivers: x.drivers, driver: x.driver })),
-      manifestUrl: "assets/cars/manifest.json?v=a4b3d01448", start: i, auto: playing, onChange: update,
+      manifestUrl: "assets/cars/manifest.json?v=d4830b7b0b", start: i, auto: playing, onChange: update,
       onState: (st) => { el.classList.toggle("loading", !!st.loading); status.textContent = st.error ? "Could not load that car" : st.loading ? "Loading car…" : ""; if (st.error) setTimeout(() => { if (status.textContent.startsWith("Could")) status.textContent = ""; }, 4000); },
     }))
       .then((c) => { ctrl = c; state.car3 = c; el.classList.remove("loading"); el.classList.add("live"); update(c.index); showCredits(c.credits); })
@@ -1881,7 +1903,7 @@ function circuit3dLayout(nx, fav) {
   const io = new IntersectionObserver(([e]) => {
     if (!e.isIntersecting) return;
     io.disconnect();
-    import("./circuit3d.js?v=a4b3d01448").then((mod) => mod.mount(el, t, { accent: teamColor(fav.Team) }))
+    import("./circuit3d.js?v=d4830b7b0b").then((mod) => mod.mount(el, t, { accent: teamColor(fav.Team) }))
       .then((dispose) => { el.classList.add("live"); state.c3dispose = dispose; })
       .catch((err) => { el.classList.add("flat"); console.info("3D circuit unavailable, showing the flat map:", err.message); });
   }, { rootMargin: "400px 0px" });
