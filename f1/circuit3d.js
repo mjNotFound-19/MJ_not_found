@@ -3,7 +3,7 @@
 // Loaded on demand by app.js; renders only while on screen. mount() throws if WebGL is unavailable,
 // and the caller keeps the flat SVG map in that case.
 
-const THREE_URL = "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.min.js";
+const THREE_URL = "three";     // resolved by the import map in index.html (three.js is hosted with the site)
 const REDUCED = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const LIFT = 7;          // elevation exaggeration: real relief is a few metres over kilometres
 const WIDTH = 17;        // ribbon width in track units (1000 = the circuit's longest side)

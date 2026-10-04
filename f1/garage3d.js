@@ -156,6 +156,7 @@ export async function mount(host, { manifestUrl, teams, start = 0, auto = true, 
   const glowTex = radialTexture([[0, "rgba(255,255,255,0.22)"], [0.5, "rgba(255,255,255,0.06)"], [1, "rgba(255,255,255,0)"]]);
   const glow = new THREE.Mesh(new THREE.PlaneGeometry(12, 12), new THREE.MeshBasicMaterial({ map: glowTex, transparent: true, depthWrite: false, toneMapped: false }));
   glow.rotation.x = -Math.PI / 2; glow.position.y = 0.001; scene.add(glow);
+  if (view) glow.visible = false;      // fixed, low view over a page background: a lit floor would end in a hard edge at the canvas
 
   // guide lines (rest anchor -> displaced part), one buffer for every part of the visible car(s)
   const GUIDE_MAX = 256;
