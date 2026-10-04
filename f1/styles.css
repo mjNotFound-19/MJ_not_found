@@ -896,3 +896,5 @@ table.repro th, table.repro td { white-space: normal; }
 .tyre.U { --tc: var(--muted); }
 .order-row { display: grid; grid-template-columns: 38px minmax(0, 1fr) 52px 60px; gap: 10px; align-items: center; min-height: 44px; }
 .order-row .order-pts { text-align: right; color: var(--text-2); }
+/* the portrait is cropped at the waist: fade its lower edge out so no hard cut shows behind the car */
+.hero-portrait:has(.hero-car) img { -webkit-mask-image: linear-gradient(to bottom, #000 62%, transparent 97%); mask-image: linear-gradient(to bottom, #000 62%, transparent 97%); }
