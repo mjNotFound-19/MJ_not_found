@@ -5,20 +5,25 @@ import { getLenis, scrollToId } from "../lib/scroll";
 const CARD_ID = "project-flat-out-f1";
 const EASE = [0.76, 0, 0.24, 1];
 
-// Timeline (seconds after the zoom starts). The gantry and lights reproduce
-// f1.h's own start-lights intro, so the portfolio hands straight into the site.
-const ZOOM = 0.8;
-const GANTRY_IN = 0.75;
-const FIRST_LIGHT = 1.3;
-const LIGHT_GAP = 0.3;
-const LIGHTS_OUT = FIRST_LIGHT + 4 * LIGHT_GAP + 0.6;
-const NAVIGATE = LIGHTS_OUT + 0.55;
+// Timeline (seconds after the zoom starts), paced like a real start: a light
+// every second, then all five hold for an unpredictable moment before going
+// out. `lead` trims the zoom when growing from a small button, not the card.
+const LIGHT_GAP = 1;
+function timeline(lead = 0) {
+  const zoom = 0.8 - lead;
+  const firstLight = 1.3 - lead;
+  const lights = [0, 1, 2, 3, 4].map((i) => firstLight + i * LIGHT_GAP);
+  // Hold after the fifth light: random, never more than 2 s.
+  const lightsOut = lights[4] + 0.5 + Math.random() * 1.5;
+  return { zoom, gantryIn: 0.75 - lead, lights, lightsOut, navigate: lightsOut + 0.75 };
+}
 
 // f1.h plays this intro once per session and remembers it under this key
 // (same origin, so shared). Setting it means visitors don't see the lights twice.
 const F1_INTRO_KEY = "f1h-lights";
 
-function Takeover({ rect, href, onCancelled }) {
+function Takeover({ rect, href, direct, onCancelled }) {
+  const [t] = useState(() => timeline(direct ? 0.35 : 0));
   const [lit, setLit] = useState(0);
   const [out, setOut] = useState(false);
   const gone = useRef(false);
@@ -34,23 +39,47 @@ function Takeover({ rect, href, onCancelled }) {
     window.location.assign(href);
   }, [href]);
 
+  // Lights are driven by elapsed time each frame rather than separate timers,
+  // so the five stay evenly spaced even if the main thread hiccups.
   useEffect(() => {
-    const timers = [];
-    for (let i = 1; i <= 5; i++) {
-      timers.push(window.setTimeout(() => setLit(i), (FIRST_LIGHT + (i - 1) * LIGHT_GAP) * 1000));
-    }
-    timers.push(window.setTimeout(() => setOut(true), LIGHTS_OUT * 1000));
-    timers.push(window.setTimeout(go, NAVIGATE * 1000));
+    const start = performance.now();
+    const elapsed = () => (performance.now() - start) / 1000;
+
+    let raf = 0;
+    let shown = 0;
+    let isOut = false;
+    const tick = () => {
+      const e = elapsed();
+      const n = t.lights.filter((at) => e >= at).length;
+      if (n > shown) {
+        shown = n;
+        setLit(n);
+      }
+      if (!isOut && e >= t.lightsOut) {
+        isOut = true;
+        setOut(true);
+      }
+      if (e >= t.navigate) {
+        go();
+        return;
+      }
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    // rAF pauses in background tabs; still get there.
+    const fallback = window.setTimeout(go, (t.navigate + 1.5) * 1000);
+
     // Like f1.h's intro: any click or key skips straight there.
     const skip = () => go();
     window.addEventListener("pointerdown", skip);
     window.addEventListener("keydown", skip);
     return () => {
-      timers.forEach((t) => window.clearTimeout(t));
+      cancelAnimationFrame(raf);
+      window.clearTimeout(fallback);
       window.removeEventListener("pointerdown", skip);
       window.removeEventListener("keydown", skip);
     };
-  }, [go]);
+  }, [go, t]);
 
   // Back/forward cache: if the visitor returns, drop the overlay.
   useEffect(() => {
@@ -68,7 +97,7 @@ function Takeover({ rect, href, onCancelled }) {
         left: rect.left,
         width: rect.width,
         height: rect.height,
-        borderRadius: 32,
+        borderRadius: direct ? rect.height / 2 : 32,
         backgroundColor: "#0a0b0e",
       }}
       animate={{
@@ -79,26 +108,28 @@ function Takeover({ rect, href, onCancelled }) {
         borderRadius: 0,
         backgroundColor: "#07080a",
       }}
-      transition={{ duration: ZOOM, ease: EASE }}
+      transition={{ duration: t.zoom, ease: EASE }}
     >
       {/* The card's top bar rides along into the zoom, then clears the stage. */}
-      <motion.div
-        className="f1h-top f1-takeover-bar"
-        initial={{ opacity: 1 }}
-        animate={{ opacity: 0 }}
-        transition={{ duration: 0.3, delay: ZOOM - 0.15 }}
-      >
-        <span className="f1h-logo f1h-mono">
-          &lt;<b>f1</b>.h&gt;
-        </span>
-      </motion.div>
+      {!direct && (
+        <motion.div
+          className="f1h-top f1-takeover-bar"
+          initial={{ opacity: 1 }}
+          animate={{ opacity: 0 }}
+          transition={{ duration: 0.3, delay: t.zoom - 0.15 }}
+        >
+          <span className="f1h-logo f1h-mono">
+            &lt;<b>f1</b>.h&gt;
+          </span>
+        </motion.div>
+      )}
 
       <div className="f1-takeover-stage">
         <motion.div
           className="f1-gantry"
           initial={{ y: -60, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 0.45, delay: GANTRY_IN, ease: "easeOut" }}
+          transition={{ duration: 0.45, delay: t.gantryIn, ease: "easeOut" }}
         >
           {[0, 1, 2, 3, 4].map((i) => (
             <span key={i} className={!out && lit > i ? "is-on" : ""}>
@@ -122,6 +153,7 @@ function Takeover({ rect, href, onCancelled }) {
 
 // Links with `data-f1-portal` scroll to the Flat Out F1 card, zoom it to fill the
 // screen, turn it into f1.h's start gantry, and hand off to /f1/ at lights out.
+// `data-f1-portal="direct"` skips the card: the link itself grows into the gantry.
 export default function F1Portal() {
   const [run, setRun] = useState(null);
 
@@ -132,11 +164,18 @@ export default function F1Portal() {
       // New tab / window intents and reduced motion get a plain link.
       if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
       if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+      const href = link.getAttribute("href");
+      if (link.dataset.f1Portal === "direct") {
+        event.preventDefault();
+        getLenis()?.stop();
+        const b = link.getBoundingClientRect();
+        setRun({ rect: { top: b.top, left: b.left, width: b.width, height: b.height }, href, direct: true });
+        return;
+      }
       const card = document.getElementById(CARD_ID);
       if (!card) return;
       event.preventDefault();
 
-      const href = link.getAttribute("href");
       let started = false;
       const zoom = () => {
         if (started) return;
@@ -177,7 +216,15 @@ export default function F1Portal() {
 
   return (
     <AnimatePresence>
-      {run && <Takeover key="f1" rect={run.rect} href={run.href} onCancelled={cancel} />}
+      {run && (
+        <Takeover
+          key="f1"
+          rect={run.rect}
+          href={run.href}
+          direct={run.direct}
+          onCancelled={cancel}
+        />
+      )}
     </AnimatePresence>
   );
 }

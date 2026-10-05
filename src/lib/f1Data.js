@@ -1,10 +1,10 @@
 import { F1_SNAPSHOT } from "./f1Snapshot";
 
-// f1.h (manasjha.online/f1) publishes its forecast as JSON. In production it's
-// same-origin; the dev server doesn't serve /f1/, so read the live copy there
-// (GitHub Pages allows cross-origin reads of it).
-export const F1_SITE = import.meta.env.DEV ? "https://manasjha.online/f1/" : "/f1/";
-const DATA_URL = `${import.meta.env.DEV ? "https://manasjha.online" : ""}/f1/data/v3/site.json`;
+// f1.h (manasjha.online/f1) publishes its forecast as JSON, same-origin. A copy
+// lives in public/f1, so the dev server serves it too, but only by explicit
+// file path: a bare /f1/ falls back to the portfolio's own index.html in dev.
+export const F1_SITE = import.meta.env.DEV ? "/f1/index.html" : "/f1/";
+const DATA_URL = "/f1/data/v3/site.json";
 
 // Shape the (large) site data down to what the portfolio card shows.
 function shape(d) {

@@ -85,7 +85,7 @@ const EN_TRANSLATION = {
     accents: ["build", "tests", "work", "operating", "benchmarks"],
   },
   marquee: ["AI coding agents", "LLM evaluation", "RAG pipelines", "Google Cloud", "Forecasting", "Security"],
-  marqueeSkills: ["Python", "TypeScript", "PyTorch", "GCP", "React", "WebGL", "GSAP", "Framer Motion", "scikit-learn", "SQL"],
+  marqueeSkills: ["Python", "TypeScript", "PyTorch", "LightGBM", "Monte Carlo", "GCP", "React", "Three.js", "WebGL", "GSAP", "Framer Motion", "scikit-learn", "SQL"],
   projectsScrollHint: "keep scrolling ->",
   manifesto: [
     { text: "BUILD IT.", caption: "design the system" },

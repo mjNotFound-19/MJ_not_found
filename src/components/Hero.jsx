@@ -135,8 +135,8 @@ export default function Hero() {
               >
                 <RollText>{t.hero.ctas.contact}</RollText>
               </motion.a>
-              {/* Zooms into the Flat Out F1 project, which becomes f1.h (see F1Portal). */}
-              <a href={F1_SITE} data-f1-portal className="btn-f1">
+              {/* Grows straight into f1.h's start lights (see F1Portal). */}
+              <a href={F1_SITE} data-f1-portal="direct" className="btn-f1">
                 <span className="btn-f1-lights" aria-hidden="true">
                   <i />
                   <i />
