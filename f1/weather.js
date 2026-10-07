@@ -2,7 +2,7 @@
 // current conditions + the next hours (Open-Meteo). Plain image and JSON requests only: no third-party
 // scripts, cookies or trackers. getWeather() also classifies the situation (dry / showers nearby / wet) for
 // the strategy notes.
-import { flow, origin, verify, coverAhead } from "./nowcast.js?v=ff820c60e3";
+import { flow, origin, verify, coverAhead } from "./nowcast.js?v=c14c3b5295";
 
 const RV = "https://api.rainviewer.com/public/weather-maps.json";
 const BASE = (z, x, y) => `https://tile.openstreetmap.org/${z}/${x}/${y}.png`;

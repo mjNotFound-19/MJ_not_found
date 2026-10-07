@@ -804,6 +804,13 @@ table.repro th, table.repro td { white-space: normal; }
 .shift-link:hover { border-color: rgba(220, 38, 38, .6); background: rgba(127, 29, 29, .35); }
 .shift-link:focus-visible { outline: 2px solid #ff6b6b; outline-offset: 2px; }
 .view-toggle { margin-top: 12px; }
+/* sprint weekends: which of the two races is on screen */
+.kind-toggle { margin-top: 14px; }
+.kind-toggle button { min-height: 44px; padding: 0 18px; display: inline-flex; align-items: center; gap: 8px; }
+.kind-toggle button small { font: 500 11px var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.kind-toggle button.on { background: var(--primary); color: #fff; box-shadow: none; }
+.kind-toggle button.on small { color: rgba(255,255,255,.82); }
+.kind-toggle button:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
 .view-note { margin: 10px 0 0; font: 500 13px/1.4 var(--mono); color: #ffcf7a; }
 /* tyre sets left per driver */
 .set-row { display: inline-flex; gap: 12px; }

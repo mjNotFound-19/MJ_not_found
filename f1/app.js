@@ -275,6 +275,7 @@ function flagWave(country) {
 function renderRace(root) {
   const nx = state.data.next;
   if (!nx) return renderResult(root);          // between a race and the next forecast: show the result
+  if (nx.sprint && sprintShown(nx)) return renderSprint(root, nx);   // sprint weekend: the sprint has its own forecast
   const m = nx.meta, c = nx.circuit, D = nx.drivers;
   // favourite, podium and win list can show the forecast from before the latest session (toggle in the hero)
   const prevF = nx.previous?.drivers?.length && SESSION_OF[m.mode] ? nx.previous : null;
@@ -289,6 +290,7 @@ function renderRace(root) {
       h("div", { class: "eyebrow" }, flag(m.country, "sm"), `Round ${m.round}, ${dateStr}`),
       titleEl(m.event),
       venueEl(m),
+      kindToggle(nx),
       h("div", { class: "chips" },
         h("span", { class: "chip red" }, before ? beforeLabel(m.mode) : MODE_LABEL[m.mode] || m.mode),
         h("span", { class: "chip", html: `${ICON.sims}${Number(m.n_sims).toLocaleString()} races simulated` }),
@@ -365,6 +367,146 @@ function renderRace(root) {
   if (shift) root.append(h("div", { class: "mt", id: "shift" }, shift));
   if (nerd()) root.append(h("div", { class: "mt" }, heatmapPanel(nx)));
 }
+/* ------------------------------------------------------------------ SPRINT (sprint weekends carry two forecasts) */
+const SPRINT_LABEL = { pre_weekend: "Pre-weekend forecast", post_sq: "After sprint qualifying" };
+// which of the two is on screen: the visitor's pick, else the sprint from its qualifying until Grand Prix qualifying is in
+function sprintShown(nx) {
+  if (state.raceKind) return state.raceKind === "sprint";
+  return nx.meta.mode !== "post_quali" && (nx.sprint.meta.mode === "post_sq" || !!nx.sprint.result);
+}
+function kindToggle(nx) {
+  if (!nx.sprint) return null;
+  const on = sprintShown(nx) ? "sprint" : "gp";
+  const day = (iso) => (iso ? new Intl.DateTimeFormat(undefined, { weekday: "short" }).format(new Date(iso)) : null);
+  return h("div", { class: "seg kind-toggle", role: "group", "aria-label": "Which race of the weekend" },
+    [["sprint", "Sprint", nx.sprint.start_utc], ["gp", "Grand Prix", nx.meta.sessions?.R]].map(([k, l, iso]) => h("button", { type: "button", class: k === on ? "on" : "",
+      "aria-pressed": String(k === on), onclick: () => { state.raceKind = k; rerender(); } }, l, day(iso) ? h("small", {}, day(iso)) : null)));
+}
+function renderSprint(root, nx) {
+  const sp = nx.sprint, m = nx.meta, sm = sp.meta, D = sp.drivers, rec = state.data.sprint_record;
+  const F = Object.fromEntries(D.map((d) => [d.Driver, d])), byWin = D.slice().sort((a, b) => b.win - a.win), fav = byWin[0];
+  const R = sp.result?.rows?.length ? sp.result.rows : null, win = R?.[0], lead = win || fav, N = sp.result?.n_laps || sm.n_laps;
+  const when = sp.start_utc ? new Date(sp.start_utc) : null;
+  const dateStr = when ? new Intl.DateTimeFormat(undefined, { weekday: "long", day: "numeric", month: "long" }).format(when) : String(m.year);
+  const sims = Number(sm.n_sims).toLocaleString(), place = (m.event || "").replace(/\s*Grand Prix.*$/i, "");
+  const called = win && fav.Driver === win.Driver;
+  const hero = h("div", { class: `hero${win ? " hero-result" : ""}`, style: win ? `--team:${teamColor(win.Team)}` : null }, flagWave(m.country),
+    h("div", { class: "hero-copy" },
+      h("div", { class: "eyebrow" }, flag(m.country, "sm"), `Round ${m.round} sprint, ${dateStr}`),
+      h("h1", {}, place, em("Sprint")),
+      venueEl(m),
+      kindToggle(nx),
+      h("div", { class: "chips" },
+        h("span", { class: "chip red" }, win ? "Sprint result" : SPRINT_LABEL[sm.mode] || sm.mode),
+        h("span", { class: "chip" }, `${N} laps`),
+        win ? null : h("span", { class: "chip", "data-tip": "No compulsory stop in a sprint: every car is simulated on one set of tyres to the flag" }, "No pit stops"),
+        win ? null : h("span", { class: "chip", html: `${ICON.sims}${sims} sprints simulated` }),
+        win ? (sp.result.sc + sp.result.red ? h("span", { class: "chip" }, `${sp.result.sc} safety car${sp.result.sc === 1 ? "" : "s"}${sp.result.red ? ` · ${sp.result.red} red flag${sp.result.red === 1 ? "" : "s"}` : ""}`) : null)
+          : h("span", { class: "chip", html: `${ICON.sc}Safety car ${pct(sm.p_sc)}` }),
+        win && sp.result.wet ? h("span", { class: "chip" }, "Wet sprint") : null,
+        !win && nerd() ? h("span", { class: "chip" }, `sprint grid ${sm.grid_known ? "known" : "simulated"}`) : null,
+        win && sp.result.provisional ? h("span", { class: "chip warn", "data-tip": "The official sprint classification is not published yet" }, "Provisional") : null),
+      win ? h("p", { class: "winner-line" }, h("b", {}, name(win.Driver)), ` won the sprint from P${win.grid}`, R[1] ? `, ahead of ${name(R[1].Driver)}` : "", R[2] ? ` and ${name(R[2].Driver)}` : "", ".") : null,
+      win ? h("p", { class: "hero-note" }, called ? `The sprint forecast had ${name(win.Driver)} as favourite, at ${pct(F[win.Driver].win)} to win.`
+        : `The sprint forecast favourite was ${name(fav.Driver)} (${pct(fav.win)}); it gave ${name(win.Driver)} ${pct(F[win.Driver]?.win ?? 0)}.`,
+        " The Grand Prix has its own forecast.")
+        : h("div", { class: "hero-meta" }, countdownEl(m, sp.start_utc), trackCard({ ...nx, circuit: { ...nx.circuit, n_laps: N } })),
+      win ? null : h("p", { class: "hero-note" }, nerd()
+        ? `Same pace models and lap-by-lap simulator as the Grand Prix, run over ${N} laps with a single no-stop plan per car and sprint points (8 to 1). ${sm.grid_known ? "Sprint grid from sprint qualifying, blended with the grid-to-finish prior." : "Sprint grid simulated from expected qualifying pace."}`
+        : `A sprint is a short race: ${N} laps here against ${sm.race_laps} on Sunday, one set of tyres and no pit stop to plan around. So the start and the grid matter more than strategy. Points go to the top eight.`)),
+    h("div", { class: "depth", "aria-hidden": "true" }, h("span", {}, win ? "SPRINT WINNER" : `${sims} SPRINTS`), h("span", {}, `RND_${String(m.round).padStart(2, "0")} // ${place.toUpperCase()} SPRINT`), h("span", {}, win ? name(win.Driver).toUpperCase() : `P(SC) ${pct(sm.p_sc)}`)),
+    h("div", { class: "hero-portrait" },
+      win ? confettiEl(teamColor(win.Team)) : null,
+      cutout(lead.Driver, { loading: "eager", fetchpriority: "high", alt: `${name(lead.Driver)}, sprint ${win ? "winner" : "favourite"}`, width: 480, height: 480 }),
+      heroCarEl(lead),
+      win ? h("button", { type: "button", class: "tag winner", onclick: () => openDriver(win.Driver), "aria-label": `Open ${name(win.Driver)}` }, h("b", { html: `${TROPHY}Sprint winner` }), h("span", {}, `${name(win.Driver)} · ${SHORT[win.Team] || win.Team}`))
+        : h("button", { type: "button", class: "tag", onclick: () => openDriver(fav.Driver), "aria-label": `Open ${name(fav.Driver)}` }, h("b", {}, pct(fav.win)), h("span", {}, `${name(fav.Driver)} to win the sprint`))));
+
+  const recordEl = rec ? h("p", { class: "explain" }, `On the ${rec.n} past sprints in the data, this forecast was closer than the sprint grid in ${rec.better}, and gave the eventual winner ${pct(rec.model_p_winner, 0)} on average against ${pct(rec.grid_p_winner, 0)} from the grid alone. `,
+    "The margin is small and fifteen sprints cannot yet rule out luck.") : null;
+  if (win) {
+    const podium = h("div", { class: "podium" }, [R[1], R[0], R[2]].filter(Boolean).map((d) => {
+      const f = F[d.Driver];
+      return h("button", { class: `pod p${d.finish}`, style: `--team:${teamColor(d.Team)}`, onclick: () => openDriver(d.Driver), "aria-label": `${name(d.Driver)}, finished P${d.finish} in the sprint` },
+        h("div", { class: "shot" }, h("div", { class: "num", "aria-hidden": "true" }, d.finish),
+          cutout(d.Driver, { loading: "eager", width: 480, height: 480 }) || h("div", { class: "ini" }, d.Driver),
+          h("div", { class: "who" }, h("div", { class: "code" }, d.Driver), h("div", { class: "name" }, `${name(d.Driver)} · ${d.Team}`))),
+        h("div", { class: "body" }, h("div", { class: "big" }, h("span", {}, `P${d.finish}`)), h("div", { class: "lbl" }, `from P${d.grid} on the sprint grid`),
+          f ? h("div", { class: "mini" }, h("span", {}, "Forecast win ", h("b", {}, pct(f.win))), h("span", {}, "podium ", h("b", {}, pct(f.podium)))) : null));
+    }));
+    const orderPanel = panel("Sprint order", "how they finished · places gained or lost from the sprint grid", stagger(h("div", { class: "stack", style: "gap:2px" }, R.map((d) => {
+      const v = d.grid - d.finish;
+      return btn("rowbtn order-row", () => openDriver(d.Driver), "", h("span", { class: "pos" }, d.classified ? d.finish : "DNF"), drvCell(d.Driver, d.Team, SHORT[d.Team] || d.Team, 32),
+        h("span", { class: "mono", style: `color:${retired(d) ? "var(--muted)" : v > 0 ? "var(--good)" : v < 0 ? "var(--bad)" : "var(--muted)"}` }, retired(d) ? "" : v > 0 ? `▲ ${v}` : v < 0 ? `▼ ${-v}` : "="),
+        h("span", { class: "mono order-pts" }, d.points ? `${fx(d.points, 0)} pts` : retired(d) ? "out" : ""));
+    }))));
+    const score = scoreEl(sp.result, R, F, { top: 8, made: SPRINT_LABEL[sm.mode] === SPRINT_LABEL.post_sq ? "after sprint qualifying" : "before the weekend", grid: "sprint grid" });
+    if (recordEl) score.append(recordEl);
+    const rows = R.map((d) => ({ d, f: F[d.Driver] }));
+    root.append(hero, h("div", { class: "grid g-main" }, h("div", { class: "stack" }, podium, score), orderPanel), circuit3dEl(nx, win),
+      h("div", { class: "mt" }, panel("Sprint classification", "result against the sprint forecast · tap a driver for details", table(rows, [
+        { id: "pos", label: "#", num: true, val: (r) => r.d.finish, render: (r) => h("span", { class: "mono" }, r.d.classified ? r.d.finish : "DNF") },
+        { id: "drv", label: "Driver", val: (r) => r.d.Driver, render: (r) => drvCell(r.d.Driver, r.d.Team, SHORT[r.d.Team] || r.d.Team, 30) },
+        { id: "grid", label: "Grid", num: true, val: (r) => r.d.grid, render: (r) => `P${r.d.grid}` },
+        { id: "chg", label: "Places", num: true, desc: true, val: (r) => r.d.grid - r.d.finish, render: (r) => { const v = r.d.grid - r.d.finish; if (retired(r.d)) return h("span", { class: "mono muted" }, "-"); return h("span", { class: "mono", style: `color:${v > 0 ? "var(--good)" : v < 0 ? "var(--bad)" : "var(--muted)"}` }, v > 0 ? `▲ ${v}` : v < 0 ? `▼ ${-v}` : "="); } },
+        { id: "fc", label: "Forecast", num: true, val: (r) => r.f?.exp_pos ?? 99, render: (r) => (r.f ? h("span", { class: "mono muted" }, `P${fx(r.f.exp_pos, 1)}`) : "-"), tip: "average finishing position in the simulated sprints" },
+        { id: "miss", label: "vs forecast", num: true, val: (r) => (r.f ? r.f.exp_pos - r.d.finish : 0), render: (r) => { if (!r.f) return "-"; const v = r.f.exp_pos - r.d.finish;
+          return h("span", { class: "mono", style: `color:${Math.abs(v) < 2 ? "var(--muted)" : v > 0 ? "var(--good)" : "var(--bad)"}` }, `${v > 0 ? "+" : ""}${fx(v, 1)}`); }, tip: "places better (+) or worse (−) than the forecast's average finish" },
+        { id: "st", label: "Status", render: (r) => h("span", { class: "muted" }, retired(r.d) ? `Retired, lap ${r.d.laps_done}` : r.d.status || "") },
+        { id: "pts", label: "Pts", num: true, desc: true, val: (r) => r.d.points, render: (r) => (r.d.points ? fx(r.d.points, 0) : "") }],
+        { key: "sprint-result", onRow: (r) => openDriver(r.d.Driver) }))));
+    return;
+  }
+
+  const podium = h("div", { class: "podium" }, [byWin[1], byWin[0], byWin[2]].map((d, i) => {
+    const pl = [2, 1, 3][i], big = h("span", {}, "0");
+    countUp(big, d.win * 100, (v) => v.toFixed(1));
+    return h("button", { class: `pod p${pl}`, style: `--team:${teamColor(d.Team)}`, onclick: () => openDriver(d.Driver), "aria-label": `${name(d.Driver)}, ${pct(d.win)} to win the sprint` },
+      h("div", { class: "shot" }, h("div", { class: "num", "aria-hidden": "true" }, pl),
+        cutout(d.Driver, { loading: "eager", width: 480, height: 480 }) || h("div", { class: "ini" }, d.Driver),
+        h("div", { class: "who" }, h("div", { class: "code" }, d.Driver), h("div", { class: "name" }, `${name(d.Driver)} · ${d.Team}`))),
+      h("div", { class: "body" }, h("div", { class: "big" }, big, h("small", {}, "%")), h("div", { class: "lbl" }, "chance to win the sprint"),
+        h("div", { class: "mini" }, h("span", {}, "Top 3 ", h("b", {}, pct(d.podium))), h("span", {}, "Avg finish ", h("b", {}, "P" + fx(d.exp_pos, 1))), nerd() ? h("span", {}, "E[pts] ", h("b", {}, fx(d.exp_pts, 1))) : null)));
+  }));
+  const upset = 1 - byWin.slice(0, 3).reduce((s, d) => s + d.win, 0), gp = Object.fromEntries(nx.drivers.map((d) => [d.Driver, d]));
+  const mover = D.filter((d) => gp[d.Driver]).sort((a, b) => Math.abs(b.win - gp[b.Driver].win) - Math.abs(a.win - gp[a.Driver].win))[0];
+  const facts = h("div", { class: "grid g-2" },
+    stat(pct(fav.win), "Sprint favourite", `${name(fav.Driver)} still loses ${pct(1 - fav.win)} of the time`, "accent"),
+    stat(pct(upset), "Surprise winner", "someone outside the top-3 favourites wins", "cyan"),
+    stat(pct(sm.p_sc), "Safety car", `over ${N} laps; ${pct(m.p_sc)} over Sunday's ${sm.race_laps}`, ""),
+    mover ? stat(`${sgn((mover.win - gp[mover.Driver].win) * 100, 1)}<small>%</small>`, "Biggest gap to Sunday", `${name(mover.Driver)}: ${pct(mover.win)} in the sprint, ${pct(gp[mover.Driver].win)} in the Grand Prix`, "") : null);
+  const sc = 1 / Math.max(...byWin.map((x) => x.podium));
+  const winList = stagger(h("div", { class: "stack", style: "gap:2px" }, (nerd() ? byWin : byWin.slice(0, 10)).map((d) => {
+    const row = btn("rowbtn", () => openDriver(d.Driver), "grid-template-columns:150px 1fr;gap:12px;align-items:center;min-height:44px", drvCell(d.Driver, d.Team, SHORT[d.Team] || d.Team, 32));
+    const dd = sp.dist?.[d.Driver];
+    if (nerd() && dd) {
+      row.style.gridTemplateColumns = "150px 1fr 112px";
+      row.append(h("div", { class: "pbar", "data-tip": `P1 ${pct(dd[0])} · P2 ${pct(dd[1])} · P3 ${pct(dd[2])}` },
+        h("i", { style: `width:${dd[0] * sc * 100}%;background:var(--gold);border-radius:6px 0 0 6px` }),
+        h("i", { style: `left:${dd[0] * sc * 100}%;width:${dd[1] * sc * 100}%;background:var(--silver);border-radius:0` }),
+        h("i", { style: `left:${(dd[0] + dd[1]) * sc * 100}%;width:${dd[2] * sc * 100}%;background:var(--bronze);border-radius:0 6px 6px 0` })),
+        h("span", { class: "mono", style: "text-align:right" }, pct(d.win), h("span", { class: "muted" }, ` / ${pct(d.podium)}`)));
+    } else row.append(pbar(d.win / byWin[0].win, teamColor(d.Team), pct(d.win)));
+    return row;
+  })));
+  const winPanel = panel(nerd() ? "Top-3 split" : "Who wins the sprint?", nerd() ? "P1 / P2 / P3 share · win / top 3" : "chance of winning the sprint", winList, recordEl);
+  const cols = [
+    { id: "rank", label: "#", val: (d) => d.rank, render: (d) => h("span", { class: "pos" }, d.rank) },
+    { id: "drv", label: "Driver", val: (d) => d.Driver, render: (d) => drvCell(d.Driver, d.Team, SHORT[d.Team] || d.Team) },
+    { id: "grid", label: "Sprint grid", num: true, val: (d) => d.grid, render: (d) => (sm.grid_known ? "P" + Math.round(d.grid) : "~" + fx(d.grid, 1)), tip: sm.grid_known ? "starting slot for the sprint" : "expected sprint grid slot (sprint qualifying simulated)" },
+    { id: "exp", label: nerd() ? "E[pos]" : "Avg finish", num: true, val: (d) => d.exp_pos, render: (d) => "P" + fx(d.exp_pos, nerd() ? 2 : 1) },
+    { id: "range", label: "P10-P90", nerd: true, val: (d) => d.p90 - d.p10, render: (d) => rangeBar(d, D.length), tip: "80% of simulated finishes fall in the bar; tick = median, ring = mean" },
+    { id: "win", label: "Win", desc: true, val: (d) => d.win, render: (d) => pbar(d.win, teamColor(d.Team)) },
+    { id: "pod", label: "Top 3", desc: true, val: (d) => d.podium, render: (d) => pbar(d.podium, "var(--gold)") },
+    { id: "pts", label: "Points", desc: true, val: (d) => d.points, render: (d) => pbar(d.points, "var(--good)"), tip: "chance of a top-eight finish (sprint points: 8 down to 1)" },
+    { id: "dnf", label: "DNF", num: true, desc: true, nerd: true, val: (d) => d.dnf, render: (d) => pct(d.dnf) },
+    { id: "ept", label: "E[pts]", num: true, desc: true, nerd: true, val: (d) => d.exp_pts, render: (d) => fx(d.exp_pts, 2) },
+    { id: "pace", label: "Pace Δ%", num: true, nerd: true, val: (d) => d.pace_pct, render: (d) => `${sgn(d.pace_pct, 2)} ±${fx(d.pace_sd, 2)}`, tip: "predicted race pace vs field median (% of lap) ± model σ" },
+  ];
+  root.append(hero, marqueeEl(byWin.slice(0, 8)), h("div", { class: "grid g-main" }, h("div", { class: "stack" }, podium, facts), winPanel), circuit3dEl(nx, fav),
+    h("div", { class: "mt" }, panel(nerd() ? "Simulated sprint classification" : "The sprint, predicted", nerd() ? "sortable · click a row for the driver file" : "tap a driver for details", table(D, cols, { key: "sprint", onRow: (d) => openDriver(d.Driver) }))));
+  if (nerd() && sp.dist) root.append(h("div", { class: "mt" }, heatmapPanel({ drivers: D, dist: sp.dist })));
+}
 // the forecast before and after the latest session (e.g. qualifying): how much that session moved it
 const SHIFT_LABEL = { ...MODE_LABEL, pre_weekend: "Before practice" };
 // before/after comparison is shown once qualifying is in (practice and sprint updates move the forecast too little)
@@ -380,9 +522,9 @@ function heroCarEl(fav) {
   const S = state.data.standings?.drivers || [], ds = S.filter((d) => d.Team === fav.Team).slice(0, 2);
   const drivers = ds.map((d) => ({ code: d.Driver, name: name(d.Driver), number: person(d.Driver).number ?? "" }));
   const el = h("div", { class: "c3 hero-car", "aria-hidden": "true" });
-  const start = () => import("./garage3d.js?v=ff820c60e3").then((mod) => mod.mount(el, {
+  const start = () => import("./garage3d.js?v=c14c3b5295").then((mod) => mod.mount(el, {
     teams: [{ team: fav.Team, label: SHORT[fav.Team] || fav.Team, color: teamColor(fav.Team), drivers, driver: Math.max(0, drivers.findIndex((d) => d.code === fav.Driver)) }],
-    manifestUrl: "assets/cars/manifest.json?v=ff820c60e3", start: 0, auto: false, quality: "mobile", view: { az: 0.74, tilt: 0.17, zoom: 0.93, sway: 0.14 } }))
+    manifestUrl: "assets/cars/manifest.json?v=c14c3b5295", start: 0, auto: false, quality: "mobile", view: { az: 0.74, tilt: 0.17, zoom: 0.93, sway: 0.14 } }))
     .then((c) => { if (!el.isConnected) { c.dispose(); return; } state.heroCar = c; el.classList.add("live"); })
     .catch((err) => { el.remove(); console.info("hero car unavailable:", err.message); });
   (window.requestIdleCallback || ((f) => setTimeout(f, 600)))(start);      // after the first paint
@@ -489,7 +631,7 @@ function circuit3dEl(nx, fav) {
   const io = new IntersectionObserver(([e]) => {
     if (!e.isIntersecting) return;
     io.disconnect();
-    import("./circuit3d.js?v=ff820c60e3").then((mod) => mod.mount(el, t, {
+    import("./circuit3d.js?v=c14c3b5295").then((mod) => mod.mount(el, t, {
       accent: teamColor(fav.Team),
       onSpeed: (v, k) => { speedV.textContent = v; speedBar.style.transform = `scaleX(${Math.max(0.04, k)})`; const [r, g, b] = mod.speedColor(k); speedBar.style.background = `rgb(${r * 255 | 0},${g * 255 | 0},${b * 255 | 0})`; },
     })).then((dispose) => { el.classList.add("live"); state.c3dispose = dispose; })
@@ -671,8 +813,7 @@ function flapTo(el, ch) {
   clearTimeout(el._t);
   el._t = setTimeout(() => { set(bottom, ch); set(leafTop, ch); el.classList.remove("flipping"); }, 620);
 }
-function countdownEl(m) {
-  const iso = m.sessions && m.sessions.R;
+function countdownEl(m, iso = m.sessions && m.sessions.R) {
   if (!iso) return null;
   const t = new Date(iso).getTime();
   const units = [["days", 86400], ["hours", 3600], ["minutes", 60], ["seconds", 1]];
@@ -901,19 +1042,19 @@ function renderResult(root) {
   root.append(h("p", { class: "sub mt" }, "The forecast for the next race appears here before its weekend starts."));
 }
 // how the forecast did against this result
-function scoreEl(L, R, F) {
+function scoreEl(L, R, F, { top = 10, made = "after qualifying", grid = "starting grid" } = {}) {
   const act = R.filter((d) => F[d.Driver]), byPod = Object.values(F).sort((a, b) => b.podium - a.podium).slice(0, 3).map((d) => d.Driver);
   const top3 = R.slice(0, 3).map((d) => d.Driver), hitPod = top3.filter((d) => byPod.includes(d)).length;
-  const byExp = Object.values(F).sort((a, b) => a.exp_pos - b.exp_pos).slice(0, 10).map((d) => d.Driver), top10 = R.slice(0, 10).map((d) => d.Driver);
+  const byExp = Object.values(F).sort((a, b) => a.exp_pos - b.exp_pos).slice(0, top).map((d) => d.Driver), top10 = R.slice(0, top).map((d) => d.Driver);
   const hitPts = top10.filter((d) => byExp.includes(d)).length;
   const mae = act.reduce((s, d) => s + Math.abs(F[d.Driver].exp_pos - d.finish), 0) / act.length, gmae = act.reduce((s, d) => s + Math.abs(d.grid - d.finish), 0) / act.length;
   const fav = Object.values(F).sort((a, b) => b.win - a.win)[0], win = R[0];
-  return panel("How the forecast did", "the forecast made after qualifying, against the result",
+  return panel("How the forecast did", `the forecast made ${made}, against the result`,
     h("div", { class: "grid g-2" },
       stat(fav.Driver === win.Driver ? "Yes" : "No", "Winner called", `${name(win.Driver)} was given ${pct(F[win.Driver]?.win ?? 0)} to win`, fav.Driver === win.Driver ? "cyan" : "accent"),
       stat(`${hitPod}<small>/3</small>`, "Podium called", `forecast top three: ${byPod.join(", ")}`, hitPod === 3 ? "cyan" : ""),
-      stat(`${hitPts}<small>/10</small>`, "Points finishers called", "from the ten best average finishes in the forecast", ""),
-      stat(fx(mae, 1), "Places off, on average", `the starting grid alone was ${fx(gmae, 1)} off`, mae <= gmae ? "cyan" : "accent")),
+      stat(`${hitPts}<small>/${top}</small>`, "Points finishers called", `from the ${top === 8 ? "eight" : "ten"} best average finishes in the forecast`, ""),
+      stat(fx(mae, 1), "Places off, on average", `the ${grid} alone was ${fx(gmae, 1)} off`, mae <= gmae ? "cyan" : "accent")),
     h("p", { class: "explain" }, mae <= gmae ? "Across the whole field the forecast was closer to the result than the starting order." : "Across the whole field the starting order was closer to the result than the forecast.",
       L.wet ? " Rain is not modelled, so a wet race moves the order more than the simulation expects." : ""));
 }
@@ -1023,7 +1164,7 @@ function weatherEl(nx) {
   const el = h("div", { class: "mt" }, panel("Live weather at the circuit", "rain radar: last two hours, now and a one-hour forecast, minute by minute · drag to move, pinch or ctrl + scroll to zoom",
     h("div", { class: "wx" }, map, stats),
     h("p", { class: "sub" }, "Radar: RainViewer · Map: © OpenStreetMap contributors · Conditions and forecast: Open-Meteo · Circuit outline: OpenStreetMap or f1-circuits (MIT). The timeline runs minute by minute: radar scans arrive every 10 minutes, the minutes between them are filled by moving the rain along its tracked motion, and the amber part is a one-hour forecast (block-correlation motion field, semi-Lagrangian advection, blurred as the lead time grows). It cannot predict showers growing or dying. Small showers can sit between radar pixels (about 1 km).")));
-  import("./weather.js?v=ff820c60e3").then((mod) => {
+  import("./weather.js?v=c14c3b5295").then((mod) => {
     let tz = null, timer = null;
     // live clocks: the circuit's local time and this device's time
     const clock = h("div", { class: "wx-clock" }), tick = () => {
@@ -1148,7 +1289,7 @@ function weatherStrategyEl(nx, fpView) {
   const body = h("div", {}, h("p", { class: "sub" }, "Checking live weather…"));
   const el = panel("Weather and strategy", "live conditions at the circuit · what rain has changed in past races", body);
   if (state.wxStop) { state.wxStop(); state.wxStop = null; }
-  import("./weather.js?v=ff820c60e3").then((mod) => { state.wxStop = mod.watchWeather(G, (w) => {
+  import("./weather.js?v=c14c3b5295").then((mod) => { state.wxStop = mod.watchWeather(G, (w) => {
     if (!w.ok) { body.replaceChildren(h("p", { class: "sub" }, "Live weather unavailable right now. The plans below assume a dry race.")); return; }
     const ref = c.base_lap * 0.985;         // a good dry race lap here (the model's base lap is the field median)
     const toS = R.to_slicks, toI = R.to_inters;
@@ -1454,9 +1595,9 @@ function garageEl(T) {
     if (!e.isIntersecting) return;
     io.disconnect();
     el.classList.add("loading");
-    import("./garage3d.js?v=ff820c60e3").then((mod) => mod.mount(el, {
+    import("./garage3d.js?v=c14c3b5295").then((mod) => mod.mount(el, {
       teams: teams.map((x) => ({ team: x.team, label: x.label, color: x.color, drivers: x.drivers, driver: x.driver })),
-      manifestUrl: "assets/cars/manifest.json?v=ff820c60e3", start: i, auto: playing, onChange: update,
+      manifestUrl: "assets/cars/manifest.json?v=c14c3b5295", start: i, auto: playing, onChange: update,
       onState: (st) => { el.classList.toggle("loading", !!st.loading); status.textContent = st.error ? "Could not load that car" : st.loading ? "Loading car…" : ""; if (st.error) setTimeout(() => { if (status.textContent.startsWith("Could")) status.textContent = ""; }, 4000); },
     }))
       .then((c) => { ctrl = c; state.car3 = c; el.classList.remove("loading"); el.classList.add("live"); update(c.index); if (want != null && want !== c.index) c.go(want); showCredits(c.credits); })   // a car picked while loading is kept
@@ -1555,6 +1696,15 @@ function renderAccuracy(root) {
   const by = years.includes(state.benchYear) ? state.benchYear : (years.includes(String(state.data.season)) ? String(state.data.season) : years[0]);
   const B = by ? state.data.benchmarks[by] : null;
   if (B) benchmarkSection(root, B, by, years);
+  const SR = state.data.sprint_record;
+  if (SR) root.append(h("div", { class: "mt" }, panel("Sprint forecast", `${SR.n} sprints, ${SR.first} to ${SR.last} · each forecast with only what was known before it, against the sprint grid`,
+    h("div", { class: "grid g-4" },
+      stat(`${SR.better}<small>/${SR.n}</small>`, "Closer than the sprint grid", "sprints where the forecast beat 'finish where you start'", "cyan"),
+      stat(pct(1 - SR.model_rps / SR.grid_rps), "Lower error than the grid", nerd() ? `RPS ${fx(SR.model_rps, 4)} vs ${fx(SR.grid_rps, 4)}` : "ranked probability score, lower is better", ""),
+      stat(pct(SR.model_p_winner, 0), "Chance we gave the winner", `the sprint grid alone: ${pct(SR.grid_p_winner, 0)}`, "accent"),
+      stat(SR.hi < 0 ? "Yes" : "Not yet", "Beyond luck?", nerd() ? `paired difference ${sgn(SR.diff, 4)}, 95% range [${sgn(SR.lo, 4)}, ${sgn(SR.hi, 4)}]` : "the likely range of the gap still includes zero", "")),
+    h("p", { class: "explain" }, "A sprint is about a third of a race with no pit stop to plan, so it has its own forecast on sprint weekends. ",
+      SR.hi < 0 ? "" : `${SR.n} sprints are too few to separate this from the sprint grid with confidence; the count grows with every sprint weekend.`))));
   const ev = state.data.season_eval?.[String(state.data.season)] || {};
   const mode = ev[state.accMode] ? state.accMode : Object.keys(ev)[0], E = ev[mode];
   if (!E) return B ? null : root.append(h("div", { class: "empty" }, "No evaluation yet. Run python -m flatout nested --year 2026 to score past races."));
@@ -1919,7 +2069,7 @@ function circuit3dLayout(nx, fav) {
   const io = new IntersectionObserver(([e]) => {
     if (!e.isIntersecting) return;
     io.disconnect();
-    import("./circuit3d.js?v=ff820c60e3").then((mod) => mod.mount(el, t, { accent: teamColor(fav.Team) }))
+    import("./circuit3d.js?v=c14c3b5295").then((mod) => mod.mount(el, t, { accent: teamColor(fav.Team) }))
       .then((dispose) => { el.classList.add("live"); state.c3dispose = dispose; })
       .catch((err) => { el.classList.add("flat"); console.info("3D circuit unavailable, showing the flat map:", err.message); });
   }, { rootMargin: "400px 0px" });
