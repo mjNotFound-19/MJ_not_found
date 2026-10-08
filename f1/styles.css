@@ -804,6 +804,13 @@ table.repro th, table.repro td { white-space: normal; }
 .shift-link:hover { border-color: rgba(220, 38, 38, .6); background: rgba(127, 29, 29, .35); }
 .shift-link:focus-visible { outline: 2px solid #ff6b6b; outline-offset: 2px; }
 .view-toggle { margin-top: 12px; }
+/* hero: one line of facts instead of a row of chips */
+.hero-line { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; margin: 14px 0 0; font: 500 13px/1.5 var(--mono); letter-spacing: .04em; color: var(--text-2); }
+.hero-line .lead { color: #fecaca; font-weight: 600; text-transform: uppercase; letter-spacing: .1em; }
+.hero-line i { font-style: normal; color: var(--muted); }
+.hero .kind-toggle { margin-top: 18px; }
+.view-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px; margin: var(--s4) 0 0; }
+.view-bar .view-toggle, .view-bar .view-note { margin: 0; }
 /* sprint weekends: which of the two races is on screen */
 .kind-toggle { margin-top: 14px; }
 .kind-toggle button { min-height: 44px; padding: 0 18px; display: inline-flex; align-items: center; gap: 8px; }

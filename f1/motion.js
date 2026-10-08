@@ -138,10 +138,8 @@ if (g && !REDUCED) {
         const tl = g.timeline({ delay: 0.05 });
         splitHeadline(hero.querySelector("h1"), 0.1);
         tl.from(hero.querySelector(".eyebrow"), { opacity: 0, x: -20, duration: 0.6 }, 0)
-          .from(hero.querySelectorAll(".chip"), { opacity: 0, y: 14, stagger: 0.06, duration: 0.6 }, 0.35)
+          .from(hero.querySelectorAll(".hero-line, .kind-toggle"), { opacity: 0, y: 14, stagger: 0.08, duration: 0.6 }, 0.35)
           .from(hero.querySelectorAll(".flipclock .flap"), { opacity: 0, rotateX: -90, transformPerspective: 500, transformOrigin: "50% 0%", stagger: 0.05, duration: 0.7, ease: "back.out(1.6)" }, 0.45)
-          .from(hero.querySelector(".trackcard"), { opacity: 0, x: 30, duration: 0.8 }, 0.55)
-          .from(hero.querySelector(".hero-note"), { opacity: 0, y: 12, duration: 0.6 }, 0.7)
           .from(hero.querySelector(".hero-portrait img"), { opacity: 0, y: 80, scale: 1.06, duration: 1.4, ease: "expo.out" }, 0.1)
           .from(hero.querySelector(".hero-portrait .tag"), { opacity: 0, y: 20, scale: 0.9, duration: 0.7, ease: "back.out(2)" }, 0.9)
           .from(hero.querySelector(".flag-wave"), { opacity: 0, xPercent: 12, duration: 1.6, ease: "power3.out" }, 0);
