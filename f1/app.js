@@ -510,9 +510,9 @@ function heroCarEl(fav) {
   const S = state.data.standings?.drivers || [], ds = S.filter((d) => d.Team === fav.Team).slice(0, 2);
   const drivers = ds.map((d) => ({ code: d.Driver, name: name(d.Driver), number: person(d.Driver).number ?? "" }));
   const el = h("div", { class: "c3 hero-car", "aria-hidden": "true" });
-  const start = () => import("./garage3d.js?v=2ff3b714ee").then((mod) => mod.mount(el, {
+  const start = () => import("./garage3d.js?v=dfaee7b8bf").then((mod) => mod.mount(el, {
     teams: [{ team: fav.Team, label: SHORT[fav.Team] || fav.Team, color: teamColor(fav.Team), drivers, driver: Math.max(0, drivers.findIndex((d) => d.code === fav.Driver)) }],
-    manifestUrl: "assets/cars/manifest.json?v=2ff3b714ee", start: 0, auto: false, quality: "mobile", view: { az: 0.74, tilt: 0.17, zoom: 0.93, sway: 0.14 } }))
+    manifestUrl: "assets/cars/manifest.json?v=dfaee7b8bf", start: 0, auto: false, quality: "mobile", view: { az: 0.74, tilt: 0.17, zoom: 0.93, sway: 0.14 } }))
     .then((c) => { if (!el.isConnected) { c.dispose(); return; } state.heroCar = c; el.classList.add("live"); })
     .catch((err) => { el.remove(); console.info("hero car unavailable:", err.message); });
   (window.requestIdleCallback || ((f) => setTimeout(f, 600)))(start);      // after the first paint
@@ -619,7 +619,7 @@ function circuit3dEl(nx, fav) {
   const io = new IntersectionObserver(([e]) => {
     if (!e.isIntersecting) return;
     io.disconnect();
-    import("./circuit3d.js?v=2ff3b714ee").then((mod) => mod.mount(el, t, {
+    import("./circuit3d.js?v=dfaee7b8bf").then((mod) => mod.mount(el, t, {
       accent: teamColor(fav.Team),
       onSpeed: (v, k) => { speedV.textContent = v; speedBar.style.transform = `scaleX(${Math.max(0.04, k)})`; const [r, g, b] = mod.speedColor(k); speedBar.style.background = `rgb(${r * 255 | 0},${g * 255 | 0},${b * 255 | 0})`; },
     })).then((dispose) => { el.classList.add("live"); state.c3dispose = dispose; })
@@ -1146,7 +1146,7 @@ function weatherEl(nx) {
   const el = h("div", { class: "mt" }, panel("Live weather at the circuit", "rain radar: last two hours, now and a one-hour forecast, minute by minute · drag to move, pinch or ctrl + scroll to zoom",
     h("div", { class: "wx" }, map, stats),
     h("p", { class: "sub" }, "Radar: RainViewer · Map: © OpenStreetMap contributors · Conditions and forecast: Open-Meteo · Circuit outline: OpenStreetMap or f1-circuits (MIT). The timeline runs minute by minute: radar scans arrive every 10 minutes, the minutes between them are filled by moving the rain along its tracked motion, and the amber part is a one-hour forecast (block-correlation motion field, semi-Lagrangian advection, blurred as the lead time grows). It cannot predict showers growing or dying. Small showers can sit between radar pixels (about 1 km).")));
-  import("./weather.js?v=2ff3b714ee").then((mod) => {
+  import("./weather.js?v=dfaee7b8bf").then((mod) => {
     let tz = null, timer = null;
     // live clocks: the circuit's local time and this device's time
     const clock = h("div", { class: "wx-clock" }), tick = () => {
@@ -1161,7 +1161,7 @@ function weatherEl(nx) {
       tz = w.tz; tick(); if (!timer) timer = setInterval(tick, 1000);
       const hours = w.hours.slice(0, 6), mx = Math.max(0.5, ...hours.map((x) => x.mm));
       const HH = { hour: "numeric" }, hour = (t) => mod.dualTime(t, w.tz, HH);
-      stats.replaceChildren(
+      stats.replaceChildren(...[
       h("div", { class: `wx-now ${WX_CLASS[w.kind]}` }, h("b", {}, WX_LABEL[w.kind]),
         h("span", {}, w.precipNow >= 0.05 ? `${fx(w.precipNow * 4, 1)} mm/h now` : w.kind === "wet" ? "shower on radar" : "no rain now", w.temp != null ? ` · ${fx(w.temp, 0)}°C` : "", w.wind != null ? ` · wind ${fx(w.wind, 0)} km/h` : "")),
       h("dl", { class: "kv" },
@@ -1174,7 +1174,7 @@ function weatherEl(nx) {
         h("i", { style: `height:${Math.max(4, (x.mm / mx) * 100)}%` }), h("b", {}, x.prob == null ? "-" : `${x.prob}%`), h("span", {}, hour(x.t).track || hour(x.t).mine)))) : null,
       hours.length && !hour(hours[0].t).same ? h("p", { class: "sub", style: "margin-top:6px" }, "Hours are circuit time; hover a bar for your time.") : null,
       sk ? h("p", { class: "sub", style: "margin-top:6px", "data-tip": "Critical success index: rain areas forecast correctly ÷ (correct + missed + false alarms), over the last two hours of scans" },
-        `Forecast check, last two hours: ${fx(sk.csi * 100, 0)}% of rain areas right at +30 min (${fx(sk.persistence * 100, 0)}% if the rain had simply stayed put)${skill.m60 ? `; ${fx(skill.m60.csi * 100, 0)}% at +60 min` : ""}.`) : null);
+        `Forecast check, last two hours: ${fx(sk.csi * 100, 0)}% of rain areas right at +30 min (${fx(sk.persistence * 100, 0)}% if the rain had simply stayed put)${skill.m60 ? `; ${fx(skill.m60.csi * 100, 0)}% at +60 min` : ""}.`) : null].filter(Boolean));
     };
     return mod.mountRadar(map, { ...G, onUpdate: show }).then((r) => { show(r.weather); state.radar = { dispose() { clearInterval(timer); r.dispose(); } }; });
   }).catch((err) => { map.replaceChildren(h("div", { class: "wx-wait" }, "Live radar unavailable right now.")); console.info("weather:", err.message); });
@@ -1271,7 +1271,7 @@ function weatherStrategyEl(nx, fpView) {
   const body = h("div", {}, h("p", { class: "sub" }, "Checking live weather…"));
   const el = panel("Weather and strategy", "live conditions at the circuit · what rain has changed in past races", body);
   if (state.wxStop) { state.wxStop(); state.wxStop = null; }
-  import("./weather.js?v=2ff3b714ee").then((mod) => { state.wxStop = mod.watchWeather(G, (w) => {
+  import("./weather.js?v=dfaee7b8bf").then((mod) => { state.wxStop = mod.watchWeather(G, (w) => {
     if (!w.ok) { body.replaceChildren(h("p", { class: "sub" }, "Live weather unavailable right now. The plans below assume a dry race.")); return; }
     const ref = c.base_lap * 0.985;         // a good dry race lap here (the model's base lap is the field median)
     const toS = R.to_slicks, toI = R.to_inters;
@@ -1577,9 +1577,9 @@ function garageEl(T) {
     if (!e.isIntersecting) return;
     io.disconnect();
     el.classList.add("loading");
-    import("./garage3d.js?v=2ff3b714ee").then((mod) => mod.mount(el, {
+    import("./garage3d.js?v=dfaee7b8bf").then((mod) => mod.mount(el, {
       teams: teams.map((x) => ({ team: x.team, label: x.label, color: x.color, drivers: x.drivers, driver: x.driver })),
-      manifestUrl: "assets/cars/manifest.json?v=2ff3b714ee", start: i, auto: playing, onChange: update,
+      manifestUrl: "assets/cars/manifest.json?v=dfaee7b8bf", start: i, auto: playing, onChange: update,
       onState: (st) => { el.classList.toggle("loading", !!st.loading); status.textContent = st.error ? "Could not load that car" : st.loading ? "Loading car…" : ""; if (st.error) setTimeout(() => { if (status.textContent.startsWith("Could")) status.textContent = ""; }, 4000); },
     }))
       .then((c) => { ctrl = c; state.car3 = c; el.classList.remove("loading"); el.classList.add("live"); update(c.index); if (want != null && want !== c.index) c.go(want); showCredits(c.credits); })   // a car picked while loading is kept
@@ -2056,7 +2056,7 @@ function circuit3dLayout(nx, fav) {
   const io = new IntersectionObserver(([e]) => {
     if (!e.isIntersecting) return;
     io.disconnect();
-    import("./circuit3d.js?v=2ff3b714ee").then((mod) => mod.mount(el, t, { accent: teamColor(fav.Team) }))
+    import("./circuit3d.js?v=dfaee7b8bf").then((mod) => mod.mount(el, t, { accent: teamColor(fav.Team) }))
       .then((dispose) => { el.classList.add("live"); state.c3dispose = dispose; })
       .catch((err) => { el.classList.add("flat"); console.info("3D circuit unavailable, showing the flat map:", err.message); });
   }, { rootMargin: "400px 0px" });
