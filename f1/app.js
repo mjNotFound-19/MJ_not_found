@@ -105,6 +105,8 @@ function pbar(p, color, label) {
 const btn = (cls, onclick, style, ...kids) => h("button", { type: "button", class: cls, onclick, style }, ...kids);
 function stagger(el) { el.classList.add("stagger"); [...el.children].forEach((c, i) => c.style.setProperty("--i", i)); return el; }
 const em = (t) => h("em", {}, t);
+// add sections to a page, skipping empty slots (Element.append would print "null")
+const put = (root, ...kids) => root.append(...kids.filter((k) => k != null && k !== false));
 function tyres(seq) {
   if (!seq) return h("span", { class: "muted" }, "-");
   const parts = seq.split("-"), nm = (c) => COMP[c] || "unknown tyre";
@@ -351,15 +353,15 @@ function renderRace(root) {
       [["now", afterLabel(m.mode)], ["before", beforeLabel(m.mode)]].map(([k, l]) => h("button", { type: "button", class: (k === "before") === before ? "on" : "",
         "aria-pressed": String((k === "before") === before), onclick: () => { state.raceView = k; rerender(); } }, l))),
     before ? h("p", { class: "view-note" }, `Showing the forecast from before ${SESSION_OF[m.mode]}. The full grid below is the latest forecast.`) : shiftLink(nx)) : null;
-  root.append(hero, marquee, consoleEl(nx), viewBar,
+  put(root, hero, marquee, consoleEl(nx), viewBar,
     h("div", { class: "grid g-main" }, h("div", { class: "stack" }, podium, quickFacts(nx)), winPanel),
     garageOn() && state.data.constructors?.length ? h("div", { class: "mt" }, sectionHead(["The ", em("garage")], "All eleven 2026 cars in 3D. Drag to turn one around, or let it come apart and rebuild as the next."), garageEl(state.data.constructors)) : null,
     circuit3dEl(nx, fav),
     weatherEl(nx),
     h("div", { class: "mt" }, panel(nerd() ? "Simulated classification" : "The grid, predicted", nerd() ? "sortable · click a row for the driver file" : "tap a driver for details", table(D, cols, { key: "race", onRow: (d) => openDriver(d.Driver) }))));
   const shift = shiftPanel(nx);
-  if (shift) root.append(h("div", { class: "mt", id: "shift" }, shift));
-  if (nerd()) root.append(h("div", { class: "mt" }, heatmapPanel(nx)));
+  if (shift) put(root, h("div", { class: "mt", id: "shift" }, shift));
+  if (nerd()) put(root, h("div", { class: "mt" }, heatmapPanel(nx)));
 }
 /* ------------------------------------------------------------------ SPRINT (sprint weekends carry two forecasts) */
 const SPRINT_LABEL = { pre_weekend: "Pre-weekend forecast", post_sq: "After sprint qualifying" };
@@ -429,7 +431,7 @@ function renderSprint(root, nx) {
     const score = scoreEl(sp.result, R, F, { top: 8, made: SPRINT_LABEL[sm.mode] === SPRINT_LABEL.post_sq ? "after sprint qualifying" : "before the weekend", grid: "sprint grid" });
     if (recordEl) score.append(recordEl);
     const rows = R.map((d) => ({ d, f: F[d.Driver] }));
-    root.append(hero, h("div", { class: "grid g-main" }, h("div", { class: "stack" }, podium, score), orderPanel), garage(), circuit3dEl(nx, win), weatherEl(nx),
+    put(root, hero, h("div", { class: "grid g-main" }, h("div", { class: "stack" }, podium, score), orderPanel), garage(), circuit3dEl(nx, win), weatherEl(nx),
       h("div", { class: "mt" }, panel("Sprint classification", "result against the sprint forecast · tap a driver for details", table(rows, [
         { id: "pos", label: "#", num: true, val: (r) => r.d.finish, render: (r) => h("span", { class: "mono" }, r.d.classified ? r.d.finish : "DNF") },
         { id: "drv", label: "Driver", val: (r) => r.d.Driver, render: (r) => drvCell(r.d.Driver, r.d.Team, SHORT[r.d.Team] || r.d.Team, 30) },
@@ -489,9 +491,9 @@ function renderSprint(root, nx) {
     { id: "ept", label: "E[pts]", num: true, desc: true, nerd: true, val: (d) => d.exp_pts, render: (d) => fx(d.exp_pts, 2) },
     { id: "pace", label: "Pace Δ%", num: true, nerd: true, val: (d) => d.pace_pct, render: (d) => `${sgn(d.pace_pct, 2)} ±${fx(d.pace_sd, 2)}`, tip: "predicted race pace vs field median (% of lap) ± model σ" },
   ];
-  root.append(hero, marqueeEl(byWin.slice(0, 8)), h("div", { class: "grid g-main" }, h("div", { class: "stack" }, podium, facts), winPanel), garage(), circuit3dEl(nx, fav), weatherEl(nx),
+  put(root, hero, marqueeEl(byWin.slice(0, 8)), h("div", { class: "grid g-main" }, h("div", { class: "stack" }, podium, facts), winPanel), garage(), circuit3dEl(nx, fav), weatherEl(nx),
     h("div", { class: "mt" }, panel(nerd() ? "Simulated sprint classification" : "The sprint, predicted", nerd() ? "sortable · click a row for the driver file" : "tap a driver for details", table(D, cols, { key: "sprint", onRow: (d) => openDriver(d.Driver) }))));
-  if (nerd() && sp.dist) root.append(h("div", { class: "mt" }, heatmapPanel({ drivers: D, dist: sp.dist })));
+  if (nerd() && sp.dist) put(root, h("div", { class: "mt" }, heatmapPanel({ drivers: D, dist: sp.dist })));
 }
 // the forecast before and after the latest session (e.g. qualifying): how much that session moved it
 const SHIFT_LABEL = { ...MODE_LABEL, pre_weekend: "Before practice" };
@@ -508,9 +510,9 @@ function heroCarEl(fav) {
   const S = state.data.standings?.drivers || [], ds = S.filter((d) => d.Team === fav.Team).slice(0, 2);
   const drivers = ds.map((d) => ({ code: d.Driver, name: name(d.Driver), number: person(d.Driver).number ?? "" }));
   const el = h("div", { class: "c3 hero-car", "aria-hidden": "true" });
-  const start = () => import("./garage3d.js?v=42fb35e7c3").then((mod) => mod.mount(el, {
+  const start = () => import("./garage3d.js?v=2ff3b714ee").then((mod) => mod.mount(el, {
     teams: [{ team: fav.Team, label: SHORT[fav.Team] || fav.Team, color: teamColor(fav.Team), drivers, driver: Math.max(0, drivers.findIndex((d) => d.code === fav.Driver)) }],
-    manifestUrl: "assets/cars/manifest.json?v=42fb35e7c3", start: 0, auto: false, quality: "mobile", view: { az: 0.74, tilt: 0.17, zoom: 0.93, sway: 0.14 } }))
+    manifestUrl: "assets/cars/manifest.json?v=2ff3b714ee", start: 0, auto: false, quality: "mobile", view: { az: 0.74, tilt: 0.17, zoom: 0.93, sway: 0.14 } }))
     .then((c) => { if (!el.isConnected) { c.dispose(); return; } state.heroCar = c; el.classList.add("live"); })
     .catch((err) => { el.remove(); console.info("hero car unavailable:", err.message); });
   (window.requestIdleCallback || ((f) => setTimeout(f, 600)))(start);      // after the first paint
@@ -617,7 +619,7 @@ function circuit3dEl(nx, fav) {
   const io = new IntersectionObserver(([e]) => {
     if (!e.isIntersecting) return;
     io.disconnect();
-    import("./circuit3d.js?v=42fb35e7c3").then((mod) => mod.mount(el, t, {
+    import("./circuit3d.js?v=2ff3b714ee").then((mod) => mod.mount(el, t, {
       accent: teamColor(fav.Team),
       onSpeed: (v, k) => { speedV.textContent = v; speedBar.style.transform = `scaleX(${Math.max(0.04, k)})`; const [r, g, b] = mod.speedColor(k); speedBar.style.background = `rgb(${r * 255 | 0},${g * 255 | 0},${b * 255 | 0})`; },
     })).then((dispose) => { el.classList.add("live"); state.c3dispose = dispose; })
@@ -954,7 +956,7 @@ function confettiEl(color) {
 const retired = (d) => !d.classified || d.outcome === "classified_retirement";
 function renderResult(root) {
   const L = state.data.last;
-  if (!L?.results?.length) { root.append(h("div", { class: "empty" }, "No prediction yet. The next forecast appears before the race weekend.")); return; }
+  if (!L?.results?.length) { put(root, h("div", { class: "empty" }, "No prediction yet. The next forecast appears before the race weekend.")); return; }
   const race = (state.data.races || []).find((r) => r.year === L.year && r.round === L.round);
   const fc = race?.predictions?.pre_race, F = Object.fromEntries((fc?.drivers || []).map((d) => [d.Driver, d]));
   const R = L.results, win = R[0], color = teamColor(win.Team), has = Object.keys(F).length > 0;
@@ -1001,13 +1003,13 @@ function renderResult(root) {
   // circuit map and live radar need the same fields as a forecast
   const px = L.meta ? { meta: L.meta, circuit: L.circuit_params || {}, track: L.track, geo: L.geo } : null;
   const con = consoleEl({ meta: { event: L.title }, drivers: R.map((d) => ({ ...d, strategy: (F[d.Driver]?.actual_strategy || d.strategy || "").split("-").map((c) => (COMP[c] ? c : "?")).join("-"), f: F[d.Driver], camTag: !d.classified ? "did not finish" : retired(d) ? `retired · P${d.finish}` : `finished P${d.finish}` })) }, L);
-  root.append(hero, con, h("div", { class: "grid g-main" }, h("div", { class: "stack" }, podium, has ? scoreEl(L, R, F) : null), orderPanel),
+  put(root, hero, con, h("div", { class: "grid g-main" }, h("div", { class: "stack" }, podium, has ? scoreEl(L, R, F) : null), orderPanel),
     garageOn() && state.data.constructors?.length ? h("div", { class: "mt" }, sectionHead(["The ", em("garage")], "All eleven 2026 cars in 3D. Drag to turn one around, or let it come apart and rebuild as the next."), garageEl(state.data.constructors)) : null,
     px ? circuit3dEl(px, win) : null,
     px ? weatherEl(px) : null);
   // full classification against the forecast
   const rows = R.map((d) => ({ d, f: F[d.Driver] }));
-  root.append(h("div", { class: "mt" }, panel("Classification", has ? "result against the forecast made after qualifying · tap a driver for details" : "tap a driver for details", table(rows, [
+  put(root, h("div", { class: "mt" }, panel("Classification", has ? "result against the forecast made after qualifying · tap a driver for details" : "tap a driver for details", table(rows, [
     { id: "pos", label: "#", num: true, val: (r) => r.d.finish, render: (r) => h("span", { class: "mono" }, r.d.classified ? r.d.finish : "DNF") },
     { id: "drv", label: "Driver", val: (r) => r.d.Driver, render: (r) => drvCell(r.d.Driver, r.d.Team, SHORT[r.d.Team] || r.d.Team, 30) },
     { id: "grid", label: "Grid", num: true, val: (r) => r.d.grid, render: (r) => `P${r.d.grid}` },
@@ -1019,7 +1021,7 @@ function renderResult(root) {
     { id: "st", label: "Status", render: (r) => h("span", { class: "muted", "data-tip": r.d.outcome === "classified_retirement" ? `Stopped after ${r.d.laps_done} laps; classified because more than 90% of the race was completed` : null }, r.d.outcome === "classified_retirement" ? `Retired, lap ${r.d.laps_done}` : !r.d.classified ? `Retired, lap ${r.d.laps_done}` : r.d.status || "") },
     { id: "pts", label: "Pts", num: true, desc: true, val: (r) => r.d.points, render: (r) => (r.d.points ? fx(r.d.points, 0) : "") }],
     { key: "result", onRow: (r) => openDriver(r.d.Driver) }))));
-  root.append(h("p", { class: "sub mt" }, "The forecast for the next race appears here before its weekend starts."));
+  put(root, h("p", { class: "sub mt" }, "The forecast for the next race appears here before its weekend starts."));
 }
 // how the forecast did against this result
 function scoreEl(L, R, F, { top = 10, made = "after qualifying", grid = "starting grid" } = {}) {
@@ -1041,11 +1043,11 @@ function scoreEl(L, R, F, { top = 10, made = "after qualifying", grid = "startin
 /* ------------------------------------------------------------------ STRATEGY */
 function renderStrategy(root) {
   const nx = state.data.next;
-  if (!nx) return root.append(h("div", { class: "empty" }, state.data.last ? `The ${state.data.last.title} is over. Strategy for the next race appears here once its forecast is made.` : "No prediction yet."));
+  if (!nx) return put(root, h("div", { class: "empty" }, state.data.last ? `The ${state.data.last.title} is over. Strategy for the next race appears here once its forecast is made.` : "No prediction yet."));
   const c = nx.circuit, D = nx.drivers, N = c.n_laps, avg = (k) => D.reduce((s, d) => s + d[k], 0) / D.length;
   const expStops = avg("exp_stops"), pass = c.overtake_factor < 0.7 ? "Hard" : c.overtake_factor > 1.3 ? "Easy" : "Average";
   const pooled = nx.meta.status === "provisional" ? " (pooled estimate: no race here in our data)" : "";
-  root.append(sectionHead(["Strategy, ", em(nx.meta.identity?.circuit || nx.meta.event.replace(/\s*Grand Prix$/i, ""))], "How the race is likely to be run: stops, tyres and pit windows, from the same simulations."),
+  put(root, sectionHead(["Strategy, ", em(nx.meta.identity?.circuit || nx.meta.event.replace(/\s*Grand Prix$/i, ""))], "How the race is likely to be run: stops, tyres and pit windows, from the same simulations."),
     h("div", { class: "grid g-4" },
       stat(fx(expStops, 1), "Stops per car", `1-stop ${pct(avg("stop1"))} · 2-stop ${pct(avg("stop2"))} · 3+ ${pct(avg("stop3p"))}`, "cyan"),
       stat(`${fx(c.pit_loss, 1)}<small>s</small>`, "Pit stop cost", "time lost driving through the pit lane" + pooled, ""),
@@ -1116,10 +1118,10 @@ function renderStrategy(root) {
       ...[1, 2, 3].flatMap((k) => [h("dt", {}, `P(${k} planned)`), h("dd", {}, pct(c.stops_dist?.[k]))]),
       ...[1, 2, 3].flatMap((k) => [h("dt", {}, `${k}-stop split`), h("dd", {}, (c.stint_frac?.[k] || []).map((f) => Math.round(f * 100) + "%").join(" / "))]))));
   }
-  root.append(h("div", { class: "grid g-main mt" }, panel("Tyre plan by driver", "most likely plan · shaded = first-stop window", lanes,
+  put(root, h("div", { class: "grid g-main mt" }, panel("Tyre plan by driver", "most likely plan · shaded = first-stop window", lanes,
     h("div", { class: "legend" }, ["S", "M", "H"].map((k) => h("span", {}, h("i", { style: `background:${COMP_COLOR[k]}` }), COMP[k])), h("span", {}, h("i", { style: "background:var(--data)" }), "pit window"))), h("div", { class: "stack" }, right)));
-  if (setsEl) root.append(h("div", { class: "mt" }, setsEl));
-  if (reco) root.append(h("div", { class: "mt" }, reco));
+  if (setsEl) put(root, h("div", { class: "mt" }, setsEl));
+  if (reco) put(root, h("div", { class: "mt" }, reco));
 }
 /* ------------------------------------------------------------------ LIVE WEATHER (web/weather.js) */
 const WX_LABEL = { dry: "Dry", threat: "Showers nearby", wet: "Rain at the circuit" };
@@ -1144,7 +1146,7 @@ function weatherEl(nx) {
   const el = h("div", { class: "mt" }, panel("Live weather at the circuit", "rain radar: last two hours, now and a one-hour forecast, minute by minute · drag to move, pinch or ctrl + scroll to zoom",
     h("div", { class: "wx" }, map, stats),
     h("p", { class: "sub" }, "Radar: RainViewer · Map: © OpenStreetMap contributors · Conditions and forecast: Open-Meteo · Circuit outline: OpenStreetMap or f1-circuits (MIT). The timeline runs minute by minute: radar scans arrive every 10 minutes, the minutes between them are filled by moving the rain along its tracked motion, and the amber part is a one-hour forecast (block-correlation motion field, semi-Lagrangian advection, blurred as the lead time grows). It cannot predict showers growing or dying. Small showers can sit between radar pixels (about 1 km).")));
-  import("./weather.js?v=42fb35e7c3").then((mod) => {
+  import("./weather.js?v=2ff3b714ee").then((mod) => {
     let tz = null, timer = null;
     // live clocks: the circuit's local time and this device's time
     const clock = h("div", { class: "wx-clock" }), tick = () => {
@@ -1269,7 +1271,7 @@ function weatherStrategyEl(nx, fpView) {
   const body = h("div", {}, h("p", { class: "sub" }, "Checking live weather…"));
   const el = panel("Weather and strategy", "live conditions at the circuit · what rain has changed in past races", body);
   if (state.wxStop) { state.wxStop(); state.wxStop = null; }
-  import("./weather.js?v=42fb35e7c3").then((mod) => { state.wxStop = mod.watchWeather(G, (w) => {
+  import("./weather.js?v=2ff3b714ee").then((mod) => { state.wxStop = mod.watchWeather(G, (w) => {
     if (!w.ok) { body.replaceChildren(h("p", { class: "sub" }, "Live weather unavailable right now. The plans below assume a dry race.")); return; }
     const ref = c.base_lap * 0.985;         // a good dry race lap here (the model's base lap is the field median)
     const toS = R.to_slicks, toI = R.to_inters;
@@ -1357,8 +1359,8 @@ const AWARDS = [
 ];
 function renderDrivers(root) {
   const R = state.data.ratings.slice();
-  if (!R.length) return root.append(h("div", { class: "empty" }, "No ratings yet."));
-  root.append(sectionHead(["Drivers, ", em("car removed")], "Every driver compared with their team-mate in the same car, race after race. Drivers who switched teams tie the whole grid onto one scale."));
+  if (!R.length) return put(root, h("div", { class: "empty" }, "No ratings yet."));
+  put(root, sectionHead(["Drivers, ", em("car removed")], "Every driver compared with their team-mate in the same car, race after race. Drivers who switched teams tie the whole grid onto one scale."));
   const [fk, ft, fsub, ff] = AWARDS[0];
   const top = R.filter((r) => r[fk] != null).sort((a, b) => b[fk] - a[fk])[0];
   const feature = h("button", { type: "button", class: "panel clickable award-feature", style: `--team:${teamColor(top.team)}`, onclick: () => openDriver(top.Driver) },
@@ -1372,7 +1374,7 @@ function renderDrivers(root) {
       h("span", {}, h("span", { class: "t", style: "display:block" }, t), h("span", { class: "n", style: "display:block" }, name(best.Driver))),
       h("span", { class: "v", "data-tip": sub }, f(best[k])));
   })));
-  root.append(h("div", { class: "awards" }, feature, list));
+  put(root, h("div", { class: "awards" }, feature, list));
   const expl = nerd()
     ? h("p", { class: "explain", html: "Each metric is fitted as <b>metric[race, driver] = car[race, team] + skill[driver] + ε</b>, with one free car effect per team per race, ridge-shrunk (λ=2) driver skills, recency-weighted (half-life 16 races). Whiskers are 95% intervals; overlapping whiskers mean the data can't separate the drivers." })
     : h("p", { class: "explain", html: "Results mostly measure the <b>car</b>. These ratings compare drivers in the same car every weekend, so what's left is the <b>driver</b>." });
@@ -1382,14 +1384,14 @@ function renderDrivers(root) {
     const toggle = h("div", { class: "seg", role: "group", "aria-label": "Ranking view" }, [["cards", "Cards"], ["list", "List"]].map(([k, l]) =>
       h("button", { type: "button", class: view === k ? "on" : "", "aria-pressed": String(view === k), onclick: () => { state.driverView = k; rerender(); } }, l)));
     if (view === "cards") {
-      root.append(h("div", { class: "mt" }, h("div", { class: "panel" }, h("div", { class: "panel-head" }, h("h2", {}, "Driver power ranking", h("small", {}, "car removed")), toggle),
+      put(root, h("div", { class: "mt" }, h("div", { class: "panel" }, h("div", { class: "panel-head" }, h("h2", {}, "Driver power ranking", h("small", {}, "car removed")), toggle),
         stagger(h("div", { class: "gallery" }, R.map((r, i) => h("button", { type: "button", class: "gcard", style: `--team:${teamColor(r.team)}`, onclick: () => openDriver(r.Driver), "aria-label": `${i + 1}. ${name(r.Driver)}, rating ${sgn(r.overall, 2)}` },
           cutout(r.Driver, { loading: "lazy", width: 240, height: 240 }), h("span", { class: "rk" }, i + 1),
           h("span", { class: "nm2" }, name(r.Driver).split(" ").slice(-1)[0]), h("span", { class: "sc" }, `${sgn(r.overall, 2)}  ${SHORT[r.team] || r.team}`))))))),
         h("div", { class: "mt" }, panel("How to read this", null, expl)));
       return;
     }
-    root.append(h("div", { class: "grid g-main mt" },
+    put(root, h("div", { class: "grid g-main mt" },
       h("div", { class: "panel" }, h("div", { class: "panel-head" }, h("h2", {}, "Driver power ranking", h("small", {}, "car removed")), toggle), stagger(h("div", { class: "stack", style: "gap:2px" }, R.map((r, i) => btn("rowbtn", () => openDriver(r.Driver), "grid-template-columns:30px 190px 1fr;gap:12px;align-items:center;min-height:44px",
         h("span", { class: "pos" }, i + 1), drvCell(r.Driver, r.team, SHORT[r.team] || r.team), pbar(0.5 + r.overall / (2 * max), teamColor(r.team), sgn(r.overall, 2))))))),
       h("div", { class: "sticky-side" }, panel("How to read this", null, expl))));
@@ -1402,7 +1404,7 @@ function renderDrivers(root) {
       id: k, label: l, num: true, desc: true, val: (r) => r[k], render: (r) => h("span", { "data-tip": `SE ${fx(r[k + "_se"], 3)} · n=${r[k + "_n"]}` }, sgn(r[k], dp), h("span", { class: "muted" }, ` ±${fx(r[k + "_se"], dp)}`)) })),
     { id: "dnf", label: "DNF rate", num: true, val: (r) => r.dnf_rate, render: (r) => pct(r.dnf_rate) },
   ];
-  root.append(h("div", { class: "grid g-2 mt" },
+  put(root, h("div", { class: "grid g-2 mt" },
     panel("Race pace", "s/lap vs average driver · 95% CI", h("div", { html: forest(R.slice().sort((a, b) => b.race_pace - a.race_pace), { key: "race_pace", se: "race_pace_se", unit: " s/lap" }) })),
     panel("Qualifying pace", "s/lap vs average driver · 95% CI", h("div", { html: forest(R.slice().sort((a, b) => b.quali_pace - a.quali_pace), { key: "quali_pace", se: "quali_pace_se", unit: " s/lap" }) }))),
     h("div", { class: "mt" }, panel("All ratings", "± standard error · sortable", table(R, cols, { key: "ratings", onRow: (r) => openDriver(r.Driver) }))),
@@ -1412,13 +1414,13 @@ function renderDrivers(root) {
 /* ------------------------------------------------------------------ DRIVER VS CAR */
 function renderDvC(root) {
   const all = (state.data.driver_vs_car || []).filter((d) => d.races >= 3);
-  if (!all.length) return root.append(h("div", { class: "empty" }, "No data yet."));
+  if (!all.length) return put(root, h("div", { class: "empty" }, "No data yet."));
   const q = state.dvcMode === "quali";
   const ek = q ? "grid_expected" : "car_expected", ak = q ? "grid_actual" : "actual", dk = q ? "quali_delta" : "race_delta";
   const rows = all.filter((d) => d[dk] != null).sort((a, b) => b[dk] - a[dk]);
   const seg = h("div", { class: "seg", role: "group", "aria-label": "Race or qualifying" }, [["race", "Race finish"], ["quali", "Qualifying"]].map(([k, l]) =>
     h("button", { class: state.dvcMode === k ? "on" : "", "aria-pressed": String(state.dvcMode === k), onclick: () => { state.dvcMode = k; rerender(); } }, l)));
-  root.append(sectionHead(q ? ["Who out-qualifies ", em("their car")] : ["Who beats ", em("their car")],
+  put(root, sectionHead(q ? ["Who out-qualifies ", em("their car")] : ["Who beats ", em("their car")],
     q ? "Where each car should start from its one-lap pace, against where its drivers actually qualified."
       : "Where each car should finish on pace alone, against where its drivers actually finished. Positive means the driver found places the car didn't have.", seg));
   const best = rows[0], worst = rows[rows.length - 1];
@@ -1436,9 +1438,9 @@ function renderDvC(root) {
     bestTeamPair ? btn("rowbtn", () => openDriver(bestTeamPair.a.Driver), null, teamLogo(bestTeamPair.team, 30) || avatar(bestTeamPair.a.Driver, 44),
       h("span", {}, h("span", { class: "t", style: "display:block" }, "Biggest team-mate gap"), h("span", { class: "n", style: "display:block" }, `${bestTeamPair.a.Driver} vs ${bestTeamPair.b.Driver}`)),
       h("span", { class: "v" }, `${fx(bestTeamPair.gap, 1)} places`)) : null);
-  root.append(h("div", { class: "awards" }, hlFeature, hlList));
+  put(root, h("div", { class: "awards" }, hlFeature, hlList));
   const noteSlot = h("div");
-  root.append(noteSlot);
+  put(root, noteSlot);
 
   // dumbbell: hollow = car, filled = driver
   const maxP = 22, x = (p) => ((p - 1) / (maxP - 1)) * 100;
@@ -1469,7 +1471,7 @@ function renderDvC(root) {
   const note = h("p", { class: "note mt" }, h("b", {}, "How it works: "), q
     ? "Car pace comes from the car-adjusted model (team effect with each driver's skill removed). Cars are ranked by one-lap pace each weekend; a driver 'should' start behind everyone in a faster car and share their own car's slots with their team-mate."
     : "Among the cars that finished each race, a driver 'should' finish behind everyone in a faster car and share their own car's slots with their team-mate. Retirements ahead don't flatter backmarkers and every race sums to zero. Caveat: the fastest car can only lose places (there's no P0), so front-runners read slightly negative.");
-  root.append(h("div", { class: "grid g-main mt" }, panel(q ? "Qualifying vs car" : "Race finish vs car", `average per ${q ? "session" : "race"} · ${state.data.season} · tap a driver`, chart, legend, note), dvcDetail(all, q)));
+  put(root, h("div", { class: "grid g-main mt" }, panel(q ? "Qualifying vs car" : "Race finish vs car", `average per ${q ? "session" : "race"} · ${state.data.season} · tap a driver`, chart, legend, note), dvcDetail(all, q)));
   if (nerd()) {
     const cols = [
       { id: "d", label: "Driver", val: (r) => r.Driver, render: (r) => drvCell(r.Driver, r.Team, SHORT[r.Team] || r.Team) },
@@ -1480,7 +1482,7 @@ function renderDvC(root) {
       { id: "qd", label: "Quali Δ", num: true, desc: true, val: (r) => r.quali_delta, render: (r) => sgn(r.quali_delta, 2) },
       { id: "b", label: "Beat car", num: true, desc: true, val: (r) => r.beat_car_pct, render: (r) => pct(r.beat_car_pct) },
     ];
-    root.append(h("div", { class: "mt" }, panel("Full table", "data behind the chart · sortable", table(all, cols, { key: "dvc", initial: { id: "rd", dir: -1 } }))));
+    put(root, h("div", { class: "mt" }, panel("Full table", "data behind the chart · sortable", table(all, cols, { key: "dvc", initial: { id: "rd", dir: -1 } }))));
   }
 }
 function dvcDetail(all, q) {
@@ -1575,9 +1577,9 @@ function garageEl(T) {
     if (!e.isIntersecting) return;
     io.disconnect();
     el.classList.add("loading");
-    import("./garage3d.js?v=42fb35e7c3").then((mod) => mod.mount(el, {
+    import("./garage3d.js?v=2ff3b714ee").then((mod) => mod.mount(el, {
       teams: teams.map((x) => ({ team: x.team, label: x.label, color: x.color, drivers: x.drivers, driver: x.driver })),
-      manifestUrl: "assets/cars/manifest.json?v=42fb35e7c3", start: i, auto: playing, onChange: update,
+      manifestUrl: "assets/cars/manifest.json?v=2ff3b714ee", start: i, auto: playing, onChange: update,
       onState: (st) => { el.classList.toggle("loading", !!st.loading); status.textContent = st.error ? "Could not load that car" : st.loading ? "Loading car…" : ""; if (st.error) setTimeout(() => { if (status.textContent.startsWith("Could")) status.textContent = ""; }, 4000); },
     }))
       .then((c) => { ctrl = c; state.car3 = c; el.classList.remove("loading"); el.classList.add("live"); update(c.index); if (want != null && want !== c.index) c.go(want); showCredits(c.credits); })   // a car picked while loading is kept
@@ -1599,11 +1601,11 @@ function garageEl(T) {
 
 function renderTeams(root) {
   const T = state.data.constructors || [];
-  if (!T.length) return root.append(h("div", { class: "empty" }, "No constructor data yet."));
+  if (!T.length) return put(root, h("div", { class: "empty" }, "No constructor data yet."));
   const drivers = (team) => (state.data.standings.drivers || []).filter((d) => d.Team === team).slice(0, 2);
-  root.append(sectionHead(["Rating ", em("the cars")], "Each car's pace with the drivers taken out, plus reliability, conversion of pace into results, pit work and in-season development. 50 is an average team."));
+  put(root, sectionHead(["Rating ", em("the cars")], "Each car's pace with the drivers taken out, plus reliability, conversion of pace into results, pit work and in-season development. 50 is an average team."));
   // the 3D garage is a work in progress: published builds switch it off (web/scripts/publish-portfolio.sh)
-  if (garageOn()) root.append(garageEl(T));
+  if (garageOn()) put(root, garageEl(T));
   const cards = stagger(h("div", { class: "stack" }, T.map((t, i) => h("div", { class: "teamcard", style: `--team:${teamColor(t.Team)}` },
     h("div", { class: "rank" }, i + 1),
     h("div", {}, h("div", { class: "tname" }, teamLogo(t.Team, 26), t.Team), h("div", { class: "tdrivers" }, drivers(t.Team).map((d) => h("button", { type: "button", class: "chipbtn", onclick: () => openDriver(d.Driver) }, avatar(d.Driver, 26, t.Team), d.Driver)),
@@ -1618,14 +1620,14 @@ function renderTeams(root) {
   }, teamLogo(t.Team, 18) || h("i"), SHORT[t.Team] || t.Team)));
   const radarPanel = panel("Compare cars", "pick up to 3", toggles, h("div", { html: radar(T.filter((t) => sel.includes(t.Team)), TEAM_AXES) }),
     h("div", { class: "legend" }, T.filter((t) => sel.includes(t.Team)).map((t, j) => h("span", {}, h("i", { style: `background:${teamColor(t.Team)};height:${[3, 2, 2][j]}px` }), t.Team + ["", " (dashed)", " (dotted)"][j]))));
-  root.append(h("div", { class: "grid g-main" }, cards, radarPanel));
+  put(root, h("div", { class: "grid g-main" }, cards, radarPanel));
 
   // pace trend
   const rounds = [...new Set(T.flatMap((t) => (t.pace_trend || []).map((p) => p.round)))].sort((a, b) => a - b);
   const show = nerd() ? T : T.filter((t) => sel.includes(t.Team));
   const trend = lineChart({ labels: rounds.map((r) => "R" + r), width: 1240, height: 340, yLabel: "pace vs median car, % (up = faster)", invert: true, zero: true, yFmt: (v) => sgn(v, 1) + "%",
     series: show.map((t) => ({ name: t.Team, color: teamColor(t.Team), values: rounds.map((r) => (t.pace_trend || []).find((p) => p.round === r)?.pace ?? null), width: sel.includes(t.Team) ? 3 : 1.4, opacity: sel.includes(t.Team) ? 1 : 0.35, endLabel: sel.includes(t.Team) ? (SHORT[t.Team] || t.Team) : null, r: sel.includes(t.Team) ? 3.6 : 2.4 })) });
-  root.append(h("div", { class: "mt" }, panel("Car pace through the season", nerd() ? "all teams · selected highlighted · higher on chart = faster" : "selected teams · higher on chart = faster", h("div", { html: trend }))));
+  put(root, h("div", { class: "mt" }, panel("Car pace through the season", nerd() ? "all teams · selected highlighted · higher on chart = faster" : "selected teams · higher on chart = faster", h("div", { html: trend }))));
   if (nerd()) {
     const cols = [
       { id: "t", label: "Team", val: (t) => t.Team, render: (t) => h("span", {}, h("span", { style: `display:inline-block;width:10px;height:10px;border-radius:3px;background:${teamColor(t.Team)};margin-right:8px` }), t.Team) },
@@ -1639,7 +1641,7 @@ function renderTeams(root) {
       { id: "pt", label: "Pit Δ s", num: true, val: (t) => t.pit_ops, render: (t) => sgn(t.pit_ops, 2), tip: "median pit loss vs race median" },
       { id: "w", label: "Wins", num: true, desc: true, val: (t) => t.wins },
     ];
-    root.append(h("div", { class: "mt" }, panel("Constructor data", "raw values behind the scores · sortable", table(T, cols, { key: "teams" }))));
+    put(root, h("div", { class: "mt" }, panel("Constructor data", "raw values behind the scores · sortable", table(T, cols, { key: "teams" }))));
   }
 }
 
@@ -1659,7 +1661,7 @@ function renderSeason(root) {
   ];
   const tmax = S.teams[0]?.points || 1;
   const prov = S.provisional_rounds || [];
-  root.append(sectionHead([`${state.data.season} `, em("championship")], "Race and sprint points after every round."
+  put(root, sectionHead([`${state.data.season} `, em("championship")], "Race and sprint points after every round."
     + (prov.length ? ` Round ${prov.join(", ")} is counted on its provisional result: standard points for the finishing order, before any penalties.` : "")),
     h("div", { class: "stack" },
       panel("Drivers", null, table(S.drivers, cols, { onRow: (d) => openDriver(d.Driver) })),
@@ -1677,7 +1679,7 @@ function renderAccuracy(root) {
   const B = by ? state.data.benchmarks[by] : null;
   if (B) benchmarkSection(root, B, by, years);
   const SR = state.data.sprint_record;
-  if (SR) root.append(h("div", { class: "mt" }, panel("Sprint forecast", `${SR.n} sprints, ${SR.first} to ${SR.last} · each forecast with only what was known before it, against the sprint grid`,
+  if (SR) put(root, h("div", { class: "mt" }, panel("Sprint forecast", `${SR.n} sprints, ${SR.first} to ${SR.last} · each forecast with only what was known before it, against the sprint grid`,
     h("div", { class: "grid g-4" },
       stat(`${SR.better}<small>/${SR.n}</small>`, "Closer than the sprint grid", "sprints where the forecast beat 'finish where you start'", "cyan"),
       stat(pct(1 - SR.model_rps / SR.grid_rps), "Lower error than the grid", nerd() ? `RPS ${fx(SR.model_rps, 4)} vs ${fx(SR.grid_rps, 4)}` : "ranked probability score, lower is better", ""),
@@ -1687,16 +1689,16 @@ function renderAccuracy(root) {
       SR.hi < 0 ? "" : `${SR.n} sprints are too few to separate this from the sprint grid with confidence; the count grows with every sprint weekend.`))));
   const ev = state.data.season_eval?.[String(state.data.season)] || {};
   const mode = ev[state.accMode] ? state.accMode : Object.keys(ev)[0], E = ev[mode];
-  if (!E) return B ? null : root.append(h("div", { class: "empty" }, "No evaluation yet. Run python -m flatout nested --year 2026 to score past races."));
+  if (!E) return B ? null : put(root, h("div", { class: "empty" }, "No evaluation yet. Run python -m flatout nested --year 2026 to score past races."));
   if (B) {   // the retrospective backtest below is kept for the per-race explorer, clearly labelled
-    root.append(h("h2", { class: "subhead mt" }, "Race-by-race detail",
+    put(root, h("h2", { class: "subhead mt" }, "Race-by-race detail",
       h("small", {}, nerd() ? "retrospective backtest \u00b7 simulator settings tuned on these same races (in-sample) \u00b7 use the numbers above for accuracy" : "what we tipped at each race")));
   }
   const tag = "backtest_" + mode, races = state.data.races.filter((r) => r.predictions[tag]), a = E.avg;
   const wins = E.per_race.filter((r) => r.model_winner_correct).length, better = 1 - a.model.rps / a.grid.rps;
-  if (!B) root.append(sectionHead(["How good are ", em("the predictions")], "Walk-forward test: the model is retrained before every race using only earlier races, then scored against the result.",
+  if (!B) put(root, sectionHead(["How good are ", em("the predictions")], "Walk-forward test: the model is retrained before every race using only earlier races, then scored against the result.",
     h("div", { class: "seg", role: "group", "aria-label": "Information available" }, Object.keys(ev).map((k) => h("button", { class: k === mode ? "on" : "", "aria-pressed": String(k === mode), onclick: () => { state.accMode = k; rerender(); } }, MODE_LABEL[k] || k)))));
-  if (!B) root.append(h("div", { class: "grid g-4" },
+  if (!B) put(root, h("div", { class: "grid g-4" },
     stat(`${wins}<small>/${E.n}</small>`, "Favourite won", `trusting the grid: ${pct(a.grid.winner_correct)} of races`, "good"),
     stat(pct(better), "More accurate than the grid", "ranked probability score vs 'finish where you start'", "cyan"),
     stat(pct(a.model.p_winner), "Chance we gave the winner", `pace-only baseline ${pct(a.pace.p_winner)}`, "accent"),
@@ -1709,7 +1711,7 @@ function renderAccuracy(root) {
       won ? avatar(won.Driver, 32, won.Team) : h("span"));
   })));
   const labels = E.per_race.map((r) => "R" + r.round);
-  root.append(h("div", { class: "grid g-main mt" },
+  put(root, h("div", { class: "grid g-main mt" },
     panel(nerd() ? "Ranked probability score per race" : "Error per race", nerd() ? "mean over drivers of Σ(CDF_pred − CDF_actual)² / (N−1)" : "lower is better · our simulator vs trusting the starting grid",
       h("div", { html: lineChart({ labels, yLabel: "RPS", lowerBetter: true, series: [
         { name: "Simulator", color: "var(--primary-hi)", values: E.per_race.map((r) => r.model_rps), width: 3 },
@@ -1723,14 +1725,14 @@ function renderAccuracy(root) {
     h("tbody", {}, keys.map(([k, l, low]) => { const vals = ["model", "pace", "grid"].map((s) => a[s]?.[k]), best = low ? Math.min(...vals) : Math.max(...vals);
       return h("tr", {}, h("td", {}, l, h("span", { class: "muted" }, low ? " ↓" : " ↑")), vals.map((v) => h("td", { class: `num mono ${v === best ? "best" : ""}` }, fx(v, 4)))); })));
   const st = E.strategy, rel = state.data.reliability || {};
-  root.append(h("div", { class: "grid g-main mt" },
+  put(root, h("div", { class: "grid g-main mt" },
     panel("Season scorecard", `${E.n} races · ${MODE_LABEL[mode]} · best per row in green`, h("div", { class: "table-wrap" }, mt)),
     panel("Strategy scorecard", "predicted vs executed", h("div", { class: "grid g-2" },
       stat(pct(st.stops_acc), "Stop count", "modal predicted = actual", "cyan"), stat(fx(st.stops_ll, 2), "Stop log loss", "uniform guess = 1.10", ""),
       stat(pct(st.seq_acc), "Exact sequence", "e.g. M-H-H predicted and run", ""), stat(`${fx(st.first_stop_mae, 1)}<small>laps</small>`, "First-stop error", `inside predicted window ${pct(st.first_stop_iqr_cover)}`, "")))));
-  root.append(h("div", { class: "mt" }, panel("Calibration", "when we say X%, does it happen X% of the time? · dot size = number of predictions",
+  put(root, h("div", { class: "mt" }, panel("Calibration", "when we say X%, does it happen X% of the time? · dot size = number of predictions",
     h("div", { class: "grid g-3" }, [["win", "WIN", "var(--gold)"], ["podium", "PODIUM", "var(--primary-hi)"], ["points", "POINTS", "var(--data)"]].map(([k, t, col]) => h("div", { html: reliability(rel[k], col, t) }))))));
-  root.append(h("div", { class: "mt", id: "race-explorer" }, raceExplorer(races, tag)));
+  put(root, h("div", { class: "mt", id: "race-explorer" }, raceExplorer(races, tag)));
 }
 function raceExplorer(races, tag) {
   if (!races.length) return h("div");
@@ -1767,14 +1769,14 @@ const PARAM_DOC = {
 };
 function renderLab(root) {
   const M = state.data.model || {}, pm = M.pace_models_meta || {}, sp = M.sim_params || {};
-  root.append(sectionHead(["Under ", em("the hood")], "Model internals, simulator parameters and the circuit file for the next race."),
+  put(root, sectionHead(["Under ", em("the hood")], "Model internals, simulator parameters and the circuit file for the next race."),
     panel("Pipeline", "python -m flatout weekend runs all of it", h("div", { class: "flow" },
       [["SYNC", "FastF1 → parquet"], ["AUDIT", "every GP checked"], ["ANALYSE", "per-race pace regression"], ["CIRCUITS", "deg · pit loss · SC · passing"], ["FEATURES", "pre-race only"], ["TRAIN", "LightGBM + ridge"], ["SIMULATE", "4M races, lap by lap"], ["EVALUATE", "proper scores vs baselines"], ["CALIBRATE", "tune sim behaviour"]]
         .flatMap(([a, b], i) => [i ? h("span", { class: "arr", "aria-hidden": "true" }, "→") : null, h("div", { class: "step" }, h("b", {}, a), b)]))));
   const scp = scenarioPanel(state.data.next), rep = reproPanel(state.data.next);
-  if (scp || rep) root.append(h("div", { class: "grid g-main mt" }, scp || h("div"), rep || h("div")));
+  if (scp || rep) put(root, h("div", { class: "grid g-main mt" }, scp || h("div"), rep || h("div")));
   const imp = (M.importance || []).slice(0, 12), imax = Math.max(...imp.map((x) => x.gain), 1);
-  root.append(h("div", { class: "grid g-3 mt" },
+  put(root, h("div", { class: "grid g-3 mt" },
     panel("Pace uncertainty", "walk-forward robust σ, % of lap", h("div", { class: "stack", style: "gap:10px" },
       Object.entries(pm.sd?.race || {}).map(([k, v]) => h("div", {}, h("div", { class: "sub" }, { quali: "after qualifying", practice: "after practice", none: "before the weekend" }[k] || k), pbar(v, "var(--data)", fx(v, 3) + " %")))),
       h("dl", { class: "kv mt" }, h("dt", {}, "race CV MAE"), h("dd", {}, fx(pm.cv?.race?.mae, 3)), h("dt", {}, "race CV RMSE"), h("dd", {}, fx(pm.cv?.race?.rmse, 3)),
@@ -1784,13 +1786,13 @@ function renderLab(root) {
     panel("Simulator parameters", `used for forecasting · tuned ${sp.calibrated || "-"} on ${(sp.races || []).length} races · RPS ${fx(sp.rps, 4)} on those races (in-sample; see Accuracy for out-of-sample)`, h("div", { class: "table-wrap" }, h("table", {}, h("tbody", {},
       Object.entries(sp.params || {}).map(([k, v]) => h("tr", {}, h("td", { class: "mono" }, k), h("td", { class: "num mono" }, fx(v, 3)), h("td", { class: "muted", style: "white-space:normal;font-size:13px" }, PARAM_DOC[k] || "")))))))));
   const ch = M.calibration_history || [], c = state.data.next?.circuit || {};
-  root.append(h("div", { class: "grid g-2 mt" },
+  put(root, h("div", { class: "grid g-2 mt" },
     panel("Calibration search", "lower RPS is better", ch.length ? h("div", { html: lineChart({ labels: ch.map((x, i) => (i % 3 === 0 ? String(i) : "")), yLabel: "RPS", lowerBetter: true, yFmt: (v) => fx(v, 4), series: [{ name: "RPS", color: "var(--data)", values: ch.map((x) => x.rps) }] }) }) : h("p", { class: "sub" }, "run python -m flatout calibrate")),
     panel(`Circuit file · ${c.location || ""}`, `${c.n_races ?? 0} past races here`, h("dl", { class: "kv" },
       ...[["laps", c.n_laps], ["base lap (s)", fx(c.base_lap, 2)], ["pit loss (s)", fx(c.pit_loss, 2)], ["fuel (s/lap)", fx(c.fuel, 4)], ["lap noise σ (s)", fx(c.lap_sd, 3)],
         ["SC+red / race", fx(c.sc_per_race, 2)], ["VSC / race", fx(c.vsc_per_race, 2)], ["red share of SC", pct(c.red_share)], ["overtake factor", fx(c.overtake_factor, 3)],
         ["DNF rate / car", pct(c.dnf_rate)], ["max stint S/M/H", c.max_stint ? `${c.max_stint.SOFT}/${c.max_stint.MEDIUM}/${c.max_stint.HARD}` : "-"]].flatMap(([k, v]) => [h("dt", {}, k), h("dd", {}, v ?? "-")])))));
-  root.append(h("div", { class: "mt" }, panel("Glossary", null, h("div", { class: "glossary" }, [
+  put(root, h("div", { class: "mt" }, panel("Glossary", null, h("div", { class: "glossary" }, [
     ["Log loss", "−mean log P(actual position). Punishes confident misses hard. Lower is better."],
     ["RPS", "Ranked probability score: compares predicted and actual cumulative finishing distributions, so near-misses earn credit. 0 = perfect."],
     ["Brier", "Mean squared error of a yes/no probability (win, podium, points)."], ["Spearman ρ", "Rank correlation between expected and actual finishing order."],
@@ -1818,7 +1820,7 @@ function rerender() {
   if (state.car3) { state.car3.dispose(); state.car3 = null; }
   for (const [k, fn] of Object.entries(RENDER)) {
     const root = $(`#view-${k}`); root.innerHTML = "";
-    if (k === state.tab) { try { fn(root); if (!window.gsap) armReveals(root); document.dispatchEvent(new CustomEvent("view:render", { detail: { tab: k, root, mode: state.mode } })); } catch (e) { console.error(e); root.append(h("div", { class: "empty" }, "Could not render this view. Reload the page; if it persists, re-run python -m flatout export. (" + e.message + ")")); } }
+    if (k === state.tab) { try { fn(root); if (!window.gsap) armReveals(root); document.dispatchEvent(new CustomEvent("view:render", { detail: { tab: k, root, mode: state.mode } })); } catch (e) { console.error(e); put(root, h("div", { class: "empty" }, "Could not render this view. Reload the page; if it persists, re-run python -m flatout export. (" + e.message + ")")); } }
   }
   window.scrollTo({ top: y, behavior: "instant" });
 }
@@ -1937,17 +1939,17 @@ function benchmarkSection(root, B, year, years) {
   const ref = mode === "post_quali" ? vsGrid : vsPace, refName = mode === "post_quali" ? "the starting grid" : "a pace-only ranking";
   const rel = (p, base) => (p && base ? -p.mean / base : null);
   const ci = (p) => (p && p.lo != null ? `${sgn(p.lo, 4)} to ${sgn(p.hi, 4)}` : "n/a");
-  root.append(sectionHead(["How good are ", em("the predictions")],
+  put(root, sectionHead(["How good are ", em("the predictions")],
     `Every ${year} race below was forecast using only what was known before it: the pace model, circuit settings and simulator settings were all re-fitted on earlier races. These races were also studied while building the model, so this is development evidence; the live record starts at Sepang.`,
     h("div", { class: "seg-row" },
       years.length > 1 ? h("div", { class: "seg", role: "group", "aria-label": "Season" }, years.map((y) => h("button", { class: y === year ? "on" : "", "aria-pressed": String(y === year), onclick: () => { state.benchYear = y; rerender(); } }, y))) : null,
       h("div", { class: "seg", role: "group", "aria-label": "Information available" }, modes.map((k) => h("button", { class: k === mode ? "on" : "", "aria-pressed": String(k === mode), onclick: () => { state.benchMode = k; rerender(); } }, MODE_LABEL[k] || k))))));
   const clear = ref && ref.hi != null && ref.hi < 0;
-  root.append(h("p", { class: "note bench-verdict" }, clear
+  put(root, h("p", { class: "note bench-verdict" }, clear
     ? `Clearly better than ${refName} in ${year}: the whole 95% range of the difference is below zero.`
     : `Better than ${refName} on average in ${year}, but the 95% range of the difference reaches zero, so the edge is not established for this season.`));
   const better = rows.filter((r) => r.model_rps < (mode === "post_quali" ? r.grid_rps : r.pace_rps)).length;
-  root.append(h("div", { class: "grid g-4" },
+  put(root, h("div", { class: "grid g-4" },
     stat(`${better}<small>/${rows.length}</small>`, `Races better than ${mode === "post_quali" ? "the grid" : "pace-only"}`, `lower error than ${refName}`, "good"),
     stat(ref && ref.mean != null ? pct(rel(ref, mode === "post_quali" ? S.grid_rps : S.pace_rps)) : "n/a", "Less error on average", `95% range of the difference ${ci(ref)} (RPS)`, "cyan"),
     stat(pct(avgOf(rows, "model_p_winner")), "Chance we gave the winner", mode === "post_quali" ? `grid baseline ${pct(avgOf(rows, "grid_p_winner"))}` : "grid unknown at this point", "accent"),
@@ -1956,7 +1958,7 @@ function benchmarkSection(root, B, year, years) {
   const series = [{ name: "Simulator", color: "var(--primary-hi)", values: rows.map((r) => r.model_rps), width: 3 },
     { name: "Pace-only", color: "var(--data)", values: rows.map((r) => r.pace_rps), dash: "2 4", opacity: .85 }];
   if (mode === "post_quali") series.splice(1, 0, { name: "Grid baseline", color: "#9aa3b0", values: rows.map((r) => r.grid_rps), dash: "6 5" });
-  root.append(h("div", { class: "mt" }, panel(nerd() ? "Ranked probability score per race" : "Error per race",
+  put(root, h("div", { class: "mt" }, panel(nerd() ? "Ranked probability score per race" : "Error per race",
     mode === "post_quali" ? "lower is better \u00b7 simulator vs the starting grid and a pace-only ranking" : "lower is better \u00b7 before the weekend the grid is unknown, so it is not a fair comparison",
     h("div", { html: lineChart({ labels, yLabel: "RPS", lowerBetter: true, series }) }),
     h("div", { class: "legend" }, series.map((s) => h("span", {}, h("i", { style: `background:${s.color}` }), s.name))))));
@@ -1966,7 +1968,7 @@ function benchmarkSection(root, B, year, years) {
   const t = h("table", {}, h("thead", {}, h("tr", {}, ["Comparison (model \u2212 baseline)", "Mean", "95% bootstrap range", "Races better", "Races"].map((x, i) => h("th", { class: i ? "num" : "", scope: "col" }, x)))),
     h("tbody", {}, mode === "post_quali" ? [line("RPS vs grid", S.model_minus_grid_rps), line("Log loss vs grid", S.model_minus_grid_log_loss)] : [],
       line("RPS vs pace-only", S.model_minus_pace_rps), line("Log loss vs pace-only", S.model_minus_pace_log_loss)));
-  root.append(h("div", { class: "grid g-main mt" },
+  put(root, h("div", { class: "grid g-main mt" },
     panel("Paired comparison", `${rows.length} races \u00b7 negative = model better \u00b7 races are the independent unit`, h("div", { class: "table-wrap" }, t)),
     panel("How this was measured", B.id, h("ul", { class: "method" },
       h("li", {}, `Simulator settings re-tuned before each race on the ${B.config.calib_last_n} races before it (${B.config.calib_sims.toLocaleString()} simulations per race per trial).`),
@@ -2054,7 +2056,7 @@ function circuit3dLayout(nx, fav) {
   const io = new IntersectionObserver(([e]) => {
     if (!e.isIntersecting) return;
     io.disconnect();
-    import("./circuit3d.js?v=42fb35e7c3").then((mod) => mod.mount(el, t, { accent: teamColor(fav.Team) }))
+    import("./circuit3d.js?v=2ff3b714ee").then((mod) => mod.mount(el, t, { accent: teamColor(fav.Team) }))
       .then((dispose) => { el.classList.add("live"); state.c3dispose = dispose; })
       .catch((err) => { el.classList.add("flat"); console.info("3D circuit unavailable, showing the flat map:", err.message); });
   }, { rootMargin: "400px 0px" });
