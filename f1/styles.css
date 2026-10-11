@@ -804,6 +804,9 @@ table.repro th, table.repro td { white-space: normal; }
 .shift-link:hover { border-color: rgba(220, 38, 38, .6); background: rgba(127, 29, 29, .35); }
 .shift-link:focus-visible { outline: 2px solid #ff6b6b; outline-offset: 2px; }
 .view-toggle { margin-top: 12px; }
+/* the wet-race odds beside the headline */
+.wet-row { display: grid; grid-template-columns: 120px 1fr 56px; gap: 12px; align-items: center; min-height: 44px; }
+.wet-row > .mono { text-align: right; }
 /* hero: one line of facts instead of a row of chips */
 .hero-line { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; margin: 14px 0 0; font: 500 13px/1.5 var(--mono); letter-spacing: .04em; color: var(--text-2); }
 .hero-line .lead { color: #fecaca; font-weight: 600; text-transform: uppercase; letter-spacing: .1em; }
