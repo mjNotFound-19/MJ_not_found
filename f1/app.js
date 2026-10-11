@@ -511,9 +511,9 @@ function heroCarEl(fav) {
   const S = state.data.standings?.drivers || [], ds = S.filter((d) => d.Team === fav.Team).slice(0, 2);
   const drivers = ds.map((d) => ({ code: d.Driver, name: name(d.Driver), number: person(d.Driver).number ?? "" }));
   const el = h("div", { class: "c3 hero-car", "aria-hidden": "true" });
-  const start = () => import("./garage3d.js?v=74e8f67bb4").then((mod) => mod.mount(el, {
+  const start = () => import("./garage3d.js?v=146895c1c7").then((mod) => mod.mount(el, {
     teams: [{ team: fav.Team, label: SHORT[fav.Team] || fav.Team, color: teamColor(fav.Team), drivers, driver: Math.max(0, drivers.findIndex((d) => d.code === fav.Driver)) }],
-    manifestUrl: "assets/cars/manifest.json?v=74e8f67bb4", start: 0, auto: false, quality: "mobile", view: { az: 0.74, tilt: 0.17, zoom: 0.93, sway: 0.14 } }))
+    manifestUrl: "assets/cars/manifest.json?v=146895c1c7", start: 0, auto: false, quality: "mobile", view: { az: 0.74, tilt: 0.17, zoom: 0.93, sway: 0.14 } }))
     .then((c) => { if (!el.isConnected) { c.dispose(); return; } state.heroCar = c; el.classList.add("live"); })
     .catch((err) => { el.remove(); console.info("hero car unavailable:", err.message); });
   (window.requestIdleCallback || ((f) => setTimeout(f, 600)))(start);      // after the first paint
@@ -620,7 +620,7 @@ function circuit3dEl(nx, fav) {
   const io = new IntersectionObserver(([e]) => {
     if (!e.isIntersecting) return;
     io.disconnect();
-    import("./circuit3d.js?v=74e8f67bb4").then((mod) => mod.mount(el, t, {
+    import("./circuit3d.js?v=146895c1c7").then((mod) => mod.mount(el, t, {
       accent: teamColor(fav.Team),
       onSpeed: (v, k) => { speedV.textContent = v; speedBar.style.transform = `scaleX(${Math.max(0.04, k)})`; const [r, g, b] = mod.speedColor(k); speedBar.style.background = `rgb(${r * 255 | 0},${g * 255 | 0},${b * 255 | 0})`; },
     })).then((dispose) => { el.classList.add("live"); state.c3dispose = dispose; })
@@ -1166,7 +1166,7 @@ function weatherEl(nx) {
   const el = h("div", { class: "mt" }, panel("Live weather at the circuit", "rain radar: last two hours, now and a one-hour forecast, minute by minute · drag to move, pinch or ctrl + scroll to zoom",
     h("div", { class: "wx" }, map, stats),
     h("p", { class: "sub" }, "Radar: RainViewer · Map: © OpenStreetMap contributors · Conditions and forecast: Open-Meteo · Circuit outline: OpenStreetMap or f1-circuits (MIT). The timeline runs minute by minute: radar scans arrive every 10 minutes, the minutes between them are filled by moving the rain along its tracked motion, and the amber part is a one-hour forecast (block-correlation motion field, semi-Lagrangian advection, blurred as the lead time grows). It cannot predict showers growing or dying. Small showers can sit between radar pixels (about 1 km).")));
-  import("./weather.js?v=74e8f67bb4").then((mod) => {
+  import("./weather.js?v=146895c1c7").then((mod) => {
     let tz = null, timer = null;
     // live clocks: the circuit's local time and this device's time
     const clock = h("div", { class: "wx-clock" }), tick = () => {
@@ -1291,7 +1291,7 @@ function weatherStrategyEl(nx, fpView) {
   const body = h("div", {}, h("p", { class: "sub" }, "Checking live weather…"));
   const el = panel("Weather and strategy", "live conditions at the circuit · what rain has changed in past races", body);
   if (state.wxStop) { state.wxStop(); state.wxStop = null; }
-  import("./weather.js?v=74e8f67bb4").then((mod) => { state.wxStop = mod.watchWeather(G, (w) => {
+  import("./weather.js?v=146895c1c7").then((mod) => { state.wxStop = mod.watchWeather(G, (w) => {
     if (!w.ok) { body.replaceChildren(h("p", { class: "sub" }, "Live weather unavailable right now. The plans below assume a dry race.")); return; }
     const ref = c.base_lap * 0.985;         // a good dry race lap here (the model's base lap is the field median)
     const toS = R.to_slicks, toI = R.to_inters;
@@ -1485,8 +1485,10 @@ function renderDvC(root) {
   queueMicrotask(() => { if (dvcNote) noteSlot.append(dvcNote); if (dvcRounds) noteSlot.append(dvcRounds); });
   // which races are in: wet races are left out, and that should not be silent
   const DR = state.data.driver_vs_car_rounds, wetR = DR?.wet || [];
-  const dvcRounds = DR?.used?.length ? h("p", { class: "note" }, `Covers ${DR.used.length} dry races, the latest being round ${DR.used[DR.used.length - 1]}. `,
-    wetR.length ? `Round${wetR.length === 1 ? "" : "s"} ${wetR.join(" and ")} ${wetR.length === 1 ? "was" : "were"} wet and ${wetR.length === 1 ? "is" : "are"} left out: in the rain, lap times say more about tyres and timing than about the car, so they cannot set what the car was worth.` : "") : null;
+  const carR = DR?.carried || [], list = (a) => (a.length > 1 ? `${a.slice(0, -1).join(", ")} and ${a[a.length - 1]}` : String(a[0]));
+  const dvcRounds = DR?.used?.length ? h("p", { class: "note" }, `Covers ${DR.used.length} races, through round ${DR.used[DR.used.length - 1]}. `,
+    carR.length ? `Round${carR.length === 1 ? "" : "s"} ${list(carR)} ${carR.length === 1 ? "was" : "were"} wet. In the rain, lap times say more about tyres and timing than about the car, so for ${carR.length === 1 ? "that race" : "those races"} each car's worth is carried over from its nearest dry races. ` : "",
+    wetR.length ? `Round${wetR.length === 1 ? "" : "s"} ${list(wetR)} could not be included.` : "") : null;
   const dvcNote = !q ? h("p", { class: "note dvc-honest" }, h("b", {}, "What this can and can't show: "),
     nerd() ? (state.data.driver_vs_car_note || "") : "Each car's pace is worked out from both of its drivers, so this mostly compares team-mates. ",
     ` Only ${clearN} of ${rows.length} drivers are clearly above or below their car so far; the rest are within normal race-to-race luck (dimmed numbers).`) : null;
@@ -1513,7 +1515,7 @@ function dvcDetail(all, q) {
   const code = state.dvcDriver && all.find((d) => d.Driver === state.dvcDriver) ? state.dvcDriver : all[0].Driver;
   const d = all.filter((x) => x.Driver === code).sort((a, b) => b.races - a.races)[0];
   const pr = d.per_race || [];
-  const labels = pr.map((r) => "R" + r.round);
+  const labels = pr.map((r) => "R" + r.round + (r.wet && !q ? "*" : ""));
   const exp = pr.map((r) => (q ? r.exp_grid : r.exp)), act = pr.map((r) => (q ? r.grid : (r.dnf ? null : r.actual)));
   const sel = h("select", { "aria-label": "Choose driver", onchange: (e) => { state.dvcDriver = e.target.value; rerender(); } },
     all.slice().sort((a, b) => a.Driver.localeCompare(b.Driver)).map((x) => h("option", { value: x.Driver, selected: x.Driver === code ? "selected" : null }, `${x.Driver} · ${SHORT[x.Team] || x.Team}`)));
@@ -1522,7 +1524,7 @@ function dvcDetail(all, q) {
     h("div", { html: lineChart({ labels, invert: true, yFmt: (v) => "P" + Math.min(22, Math.max(1, Math.round(v))), yLabel: q ? "grid slot" : "finish", series: [
       { name: "Car worth", color: "var(--muted)", values: exp, dash: "5 5", hollow: true },
       { name: name(code), color: teamColor(d.Team), values: act, width: 3 }] }) }),
-    h("div", { class: "legend" }, h("span", {}, h("i", { style: "background:var(--muted)" }), "car worth (dashed)"), h("span", {}, h("i", { style: `background:${teamColor(d.Team)}` }), name(code)), q ? null : h("span", {}, "gaps = retirements")),
+    h("div", { class: "legend" }, h("span", {}, h("i", { style: "background:var(--muted)" }), "car worth (dashed)"), h("span", {}, h("i", { style: `background:${teamColor(d.Team)}` }), name(code)), q ? null : h("span", {}, "gaps = retirements"), !q && pr.some((r) => r.wet) ? h("span", {}, "* wet race: car worth carried from nearby dry races") : null),
     h("p", { class: "sub mt" }, `${d.races} races · ${d.dnfs} DNF · beat the car in ${pct(d.beat_car_pct)} of finishes`)));
 }
 
@@ -1601,9 +1603,9 @@ function garageEl(T) {
     if (!e.isIntersecting) return;
     io.disconnect();
     el.classList.add("loading");
-    import("./garage3d.js?v=74e8f67bb4").then((mod) => mod.mount(el, {
+    import("./garage3d.js?v=146895c1c7").then((mod) => mod.mount(el, {
       teams: teams.map((x) => ({ team: x.team, label: x.label, color: x.color, drivers: x.drivers, driver: x.driver })),
-      manifestUrl: "assets/cars/manifest.json?v=74e8f67bb4", start: i, auto: playing, onChange: update,
+      manifestUrl: "assets/cars/manifest.json?v=146895c1c7", start: i, auto: playing, onChange: update,
       onState: (st) => { el.classList.toggle("loading", !!st.loading); status.textContent = st.error ? "Could not load that car" : st.loading ? "Loading car…" : ""; if (st.error) setTimeout(() => { if (status.textContent.startsWith("Could")) status.textContent = ""; }, 4000); },
     }))
       .then((c) => { ctrl = c; state.car3 = c; el.classList.remove("loading"); el.classList.add("live"); update(c.index); if (want != null && want !== c.index) c.go(want); showCredits(c.credits); })   // a car picked while loading is kept
@@ -2080,7 +2082,7 @@ function circuit3dLayout(nx, fav) {
   const io = new IntersectionObserver(([e]) => {
     if (!e.isIntersecting) return;
     io.disconnect();
-    import("./circuit3d.js?v=74e8f67bb4").then((mod) => mod.mount(el, t, { accent: teamColor(fav.Team) }))
+    import("./circuit3d.js?v=146895c1c7").then((mod) => mod.mount(el, t, { accent: teamColor(fav.Team) }))
       .then((dispose) => { el.classList.add("live"); state.c3dispose = dispose; })
       .catch((err) => { el.classList.add("flat"); console.info("3D circuit unavailable, showing the flat map:", err.message); });
   }, { rootMargin: "400px 0px" });
