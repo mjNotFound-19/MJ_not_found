@@ -16,7 +16,7 @@ const EN_TRANSLATION = {
     line1: "Hi, I'm",
     prompt: "currently",
     body:
-      "Software engineer with a Bachelors in Artificial Intelligence from Purdue (2026) and 2+ years building cloud-based, data-intensive systems on Google Cloud. I write frontier-model coding benchmarks at Handshake and I'm founding a stealth startup building a local-first operating system for AI agents.",
+      "Software engineer with a Bachelors in Artificial Intelligence from Purdue (2026) and 2+ years building cloud-based, data-intensive systems on Google Cloud. I'm an AI Engineer at DevHawk AI and I'm founding a stealth startup building a local-first operating system for AI agents.",
     location: "Atlanta, GA - US citizen - open to hybrid on-site",
     nowTitle: "~/now",
     ctas: {
@@ -51,7 +51,7 @@ const EN_TRANSLATION = {
   aboutContent: {
     highlightLines: ["Purdue AI graduate (2026)", "building and testing AI systems."],
     body:
-      "Hands-on with AI agents from both sides: I write the benchmarks and judge test cases that measure frontier models, and I'm building a local-first operating system to run agents on. Before that: RAG and LLM orchestration research at Purdue, demand forecasting and network analytics for Caterpillar, and intrusion detection at Avolta. CS coursework covered OOP, computer architecture, C, and data engineering in Python.",
+      "Hands-on with AI agents end to end: I build them as an AI Engineer at DevHawk AI, and I'm building a local-first operating system to run them on. Before that: frontier-model coding benchmarks at Handshake, RAG and LLM orchestration research at Purdue, demand forecasting and network analytics for Caterpillar, and intrusion detection at Avolta. CS coursework covered OOP, computer architecture, C, and data engineering in Python.",
     metaTitle: "How I work",
     metaSubtitle: "Ambiguous problems, measurable answers.",
     metaBody:
@@ -81,8 +81,8 @@ const EN_TRANSLATION = {
     metricsLive: "measured",
   },
   statement: {
-    text: "I build AI systems, then I build the tests that prove whether they actually work. Right now that means an operating system for AI agents and benchmarks that push frontier models.",
-    accents: ["build", "tests", "work", "operating", "benchmarks"],
+    text: "I build AI systems, then I build the tests that prove whether they actually work. Right now that means AI agents at DevHawk AI and an operating system to run them on.",
+    accents: ["build", "tests", "work", "agents", "operating"],
   },
   marquee: ["AI coding agents", "LLM evaluation", "RAG pipelines", "Google Cloud", "Forecasting", "Security"],
   marqueeSkills: ["Python", "TypeScript", "PyTorch", "LightGBM", "Monte Carlo", "GCP", "React", "Three.js", "WebGL", "GSAP", "Framer Motion", "scikit-learn", "SQL"],

@@ -13,7 +13,7 @@ export const CONTACT = {
 export const HERO = {
   roles: [
     "building a local-first OS for AI agents",
-    "writing frontier-model coding benchmarks",
+    "engineering AI agents at DevHawk AI",
     "shipping data-intensive systems on GCP",
     "forecasting demand across 1,500+ suppliers",
   ],
@@ -52,11 +52,11 @@ export const HERO = {
         "A local-first operating system for AI agents: workloads run on-device by default and burst to rented cloud GPUs when local resources run short. I own the architecture and implementation.",
     },
     {
-      title: "Handshake",
-      org: "AI & ML Researcher (Contract)",
+      title: "DevHawk AI",
+      org: "AI Engineer",
       status: "Current",
       description:
-        "Writing advanced software-engineering benchmark problems, reference solutions and automated judge test cases that measure frontier models for leading AI labs.",
+        "Building AI agents and LLM-powered tooling that take software work from idea to shipped code.",
     },
   ],
 };
@@ -140,6 +140,15 @@ export const ABOUT_FEATURES = [
 
 export const EXPERIENCE = [
   {
+    role: "AI Engineer",
+    highlight: { value: "AI agents", label: "for software delivery" },
+    org: "DevHawk AI",
+    period: "Oct 2026 - Present",
+    bullets: [
+      "Build AI agents and LLM-powered tooling that take software work from idea to shipped code.",
+    ],
+  },
+  {
     role: "Founder",
     highlight: { value: "Agent OS", label: "local-first, cloud GPU burst" },
     org: "Stealth Startup - United States",
@@ -153,10 +162,10 @@ export const EXPERIENCE = [
     role: "AI & Machine Learning Researcher (Contract)",
     highlight: { value: "Frontier", label: "model coding benchmarks" },
     org: "Handshake - Remote",
-    period: "May 2026 - Present",
+    period: "May 2026 - Oct 2026",
     bullets: [
-      "Author advanced software-engineering benchmark problems, reference solutions and automated judge test cases used to measure the coding capability of frontier models for leading AI labs.",
-      "Evaluate frontier LLM and multimodal model outputs against structured rubrics covering correctness, instruction-following, factuality and safety, and write evaluations used in downstream model assessment.",
+      "Authored advanced software-engineering benchmark problems, reference solutions and automated judge test cases used to measure the coding capability of frontier models for leading AI labs.",
+      "Evaluated frontier LLM and multimodal model outputs against structured rubrics covering correctness, instruction-following, factuality and safety, and wrote evaluations used in downstream model assessment.",
     ],
   },
   {
