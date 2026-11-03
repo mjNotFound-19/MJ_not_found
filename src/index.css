@@ -1709,7 +1709,7 @@ button.stat-card:hover {
   font-size: clamp(3.5rem, 14vw, 13rem);
   line-height: 0.9;
   letter-spacing: -0.06em;
-  color: #111;
+  color: #ece9e2;
   text-align: center;
 }
 

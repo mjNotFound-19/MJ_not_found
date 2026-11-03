@@ -3,7 +3,7 @@ import { useLeaving } from "../lib/pageTransition";
 
 const EASE = [0.76, 0, 0.24, 1];
 
-// Portfolio -> bucket list: warm paper floods out of the click point and the
+// Portfolio -> bucket list: the bucket list's near-black floods out of the click point and the
 // bucket list's title rises in. The bucket page opens on this exact frame.
 export default function LeaveToBucket() {
   const leaving = useLeaving();
@@ -14,7 +14,7 @@ export default function LeaveToBucket() {
       {active && (
         <motion.div
           className="fixed inset-0 z-[2147483646] grid place-items-center"
-          style={{ background: "#ebe9e4", color: "#111" }}
+          style={{ background: "#08090b", color: "#ece9e2" }}
           initial={{ clipPath: `circle(0% at ${leaving.x}px ${leaving.y}px)` }}
           animate={{ clipPath: `circle(150% at ${leaving.x}px ${leaving.y}px)` }}
           transition={{ duration: 0.8, ease: EASE }}

@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useRef, useState } from "react";
-import { motion, useInView, useMotionValueEvent, useScroll, useTransform } from "framer-motion";
+import { motion, useInView, useMotionValueEvent, useScroll, useSpring, useTransform } from "framer-motion";
 import { CLIMB_MARKERS, DREAMS, PEAKS } from "../data";
 import ChapterHeader from "./ChapterHeader";
 import TerrainCanvas from "./TerrainCanvas";
@@ -76,10 +76,6 @@ function Climb() {
   const altRef = useRef(null);
   const pressureRef = useRef(null);
   const [markerIndex, setMarkerIndex] = useState(0);
-  // Text flips from ink to paper at one point instead of blending: a blended
-  // colour passes through grey-on-blue mid-climb. At 7,000 m the sky is dark
-  // enough that both colours still clear ~4:1 during the quick fade.
-  const [dark, setDark] = useState(false);
   // Rendered mountains when WebGL works; the illustrated ridges otherwise.
   const [realistic, setRealistic] = useState(true);
   const onUnsupported = useCallback(() => setRealistic(false), []);
@@ -88,13 +84,19 @@ function Climb() {
   const nearClimb = useInView(ref, { once: true, margin: "100% 0px 100% 0px" });
 
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end end"] });
-  const altitude = useTransform(scrollYProgress, [0.04, 0.88], [0, SUMMIT], { clamp: true });
+  // The camera is a body with mass: it follows the scroll on a damped spring,
+  // so it eases off, carries a little and settles instead of stopping dead.
+  const altitude = useSpring(useTransform(scrollYProgress, [0.04, 0.88], [0, SUMMIT], { clamp: true }), {
+    stiffness: 42,
+    damping: 17,
+    restDelta: 0.5,
+  });
   const climb = useTransform(altitude, [0, SUMMIT], [0, 1]);
 
   const sky = useTransform(
     altitude,
     [0, 5364, 6500, 8000, SUMMIT],
-    ["#ebe9e4", "#cdd8ef", "#6a7fbd", "#26366b", "#0d1633"]
+    ["#1a2236", "#22325a", "#26366b", "#18244d", "#0d1633"]
   );
   const starOpacity = useTransform(altitude, [7000, SUMMIT], [0, 1]);
   const pressureWidth = useTransform(altitude, (m) => `${(pressureAt(m) * 100).toFixed(1)}%`);
@@ -108,12 +110,11 @@ function Climb() {
       if (m >= marker.at) idx = i;
     });
     setMarkerIndex(idx);
-    setDark(m >= 7000);
   });
 
-  // Over the rendered scene the text is always light on dark glass: the image
-  // mixes bright snow and dark rock, so no single ink colour works on it bare.
-  const onDark = realistic || dark;
+  // Text is always light on dark glass: over the rendered scene the image mixes
+  // bright snow and dark rock, and the illustrated fallback sky is dark too.
+  const onDark = true;
   const panel = `rounded-2xl p-4 md:p-5 transition-colors duration-500 ${
     onDark ? "bg-[rgba(8,12,24,0.62)]" : "bg-[rgba(235,233,228,0.82)]"
   }`;

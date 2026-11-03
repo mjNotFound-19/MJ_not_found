@@ -2,16 +2,17 @@
 @tailwind components;
 @tailwind utilities;
 
-/* The bucket list is intentionally the opposite of the portfolio: warm paper,
-   black ink, editorial serif + mono. Each dream brings its own accent. */
+/* The bucket list is cinematic: near-black between rendered scenes, warm off-
+   white type, film grain, editorial serif + mono. Each dream brings its own accent.
+   The tokens keep their paper/ink names: paper is the background, ink the text. */
 :root {
-  --paper: #ebe9e4;
-  --paper-2: #e2dfd8;
-  --paper-3: #d6d2c9;
-  --ink: #111111;
+  --paper: #08090b;
+  --paper-2: #121316;
+  --paper-3: #23252a;
+  --ink: #ece9e2;
   --ink-2: #3a3a38;
   --ink-3: #6b6a66;
-  --rule: rgba(17, 17, 17, 0.14);
+  --rule: rgba(236, 233, 226, 0.13);
   --serif: "Instrument Serif", "Times New Roman", serif;
   --sans: "Inter Tight", "Helvetica Neue", Arial, sans-serif;
   --mono: "Fragment Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
@@ -83,14 +84,14 @@ button {
   border-top: 1px solid var(--rule);
 }
 
-/* Paper grain: a static SVG noise tile. Static, so it costs nothing per frame. */
+/* Film grain: a static SVG noise tile. Static, so it costs nothing per frame. */
 .b-grain {
   position: fixed;
   inset: 0;
   z-index: 60;
   pointer-events: none;
-  opacity: 0.35;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.08 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  opacity: 0.5;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.07 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
 /* ---------- Top bar ---------- */
@@ -100,7 +101,7 @@ button {
   inset: 0 0 auto;
   z-index: 50;
   padding: 14px 0;
-  background: linear-gradient(180deg, var(--paper) 55%, rgba(235, 233, 228, 0));
+  background: linear-gradient(180deg, var(--paper) 45%, rgba(8, 9, 11, 0));
 }
 
 .b-pill {
@@ -163,6 +164,28 @@ a:focus-visible .roll-char {
 
 /* ---------- Hero ---------- */
 
+/* Dim pools of the four accent colours drifting behind the title, like light
+   spilling across a dark set. Blurred once, then only transformed. */
+.b-hero-glow {
+  position: absolute;
+  inset: -20%;
+  pointer-events: none;
+  background:
+    radial-gradient(38% 34% at 72% 34%, rgba(47, 109, 246, 0.24), transparent 70%),
+    radial-gradient(32% 30% at 86% 64%, rgba(124, 58, 237, 0.2), transparent 70%),
+    radial-gradient(30% 28% at 58% 82%, rgba(255, 106, 0, 0.13), transparent 70%),
+    radial-gradient(26% 24% at 30% 22%, rgba(230, 32, 46, 0.1), transparent 70%);
+  filter: blur(40px);
+  animation: b-drift 26s ease-in-out infinite alternate;
+  will-change: transform;
+}
+
+@keyframes b-drift {
+  to {
+    transform: translate3d(-6%, 4%, 0) scale(1.08);
+  }
+}
+
 .b-hero-title {
   font-family: var(--sans);
   font-weight: 800;
@@ -189,7 +212,7 @@ a:focus-visible .roll-char {
   font-family: var(--mono);
   font-size: 0.72rem;
   white-space: nowrap;
-  box-shadow: 0 10px 24px rgba(17, 17, 17, 0.18);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.45);
 }
 
 /* ---------- Overview grid (godly) ---------- */
@@ -208,7 +231,7 @@ a:focus-visible .roll-char {
 
 .b-card:hover {
   transform: translateY(-6px);
-  box-shadow: 0 30px 60px -30px rgba(17, 17, 17, 0.45);
+  box-shadow: 0 30px 60px -30px rgba(0, 0, 0, 0.9);
 }
 
 .b-card-art {
@@ -312,20 +335,8 @@ a:focus-visible .roll-char {
   }
 }
 
-@keyframes b-marquee {
-  to {
-    transform: translateX(-50%);
-  }
-}
-
-.b-marquee-track {
-  display: flex;
-  width: max-content;
-  animation: b-marquee 30s linear infinite;
-}
-
 @media (prefers-reduced-motion: reduce) {
-  .b-marquee-track,
+  .b-hero-glow,
   .b-record-spin {
     animation: none;
   }
@@ -341,7 +352,7 @@ a:focus-visible .roll-char {
   font-size: clamp(3.5rem, 14vw, 13rem);
   line-height: 0.9;
   letter-spacing: -0.06em;
-  color: #111;
+  color: #ece9e2;
   text-align: center;
 }
 

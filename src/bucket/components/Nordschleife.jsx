@@ -1,6 +1,7 @@
-import { useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import {
   motion,
+  useMotionValue,
   useMotionValueEvent,
   useScroll,
   useSpring,
@@ -10,10 +11,26 @@ import {
 import { DREAMS } from "../data";
 import { START_FINISH, TRACK_CORNERS, TRACK_D } from "../nordschleifeTrack";
 import ChapterHeader from "./ChapterHeader";
+import { gsap, useGSAP } from "../lib/gsap";
+import ShaderCanvas from "./ShaderCanvas";
+import { NORDSCHLEIFE_FRAG } from "../scenes/nordschleife.glsl.js";
+import { drive, frameDelta, gearbox, scrollRate } from "../lib/motion";
 
 const dream = DREAMS.find((d) => d.id === "nordschleife");
 const LAP_KM = 20.832;
 const PAPER = "#ebe9e4";
+// Longest the speed streak behind the car gets, as a share of the lap.
+const MAX_STREAK = 0.06;
+
+// The onboard car, in m/s and m/s^2. It never stops on track: with no input it
+// rolls on at a cooling-lap pace. Scrolling forward asks for more speed (a fast
+// flick is flat out); scrolling back lifts and brakes. GT3-ish limits: ~0-100
+// in 3 s, braking around 1.8 g, ~290 km/h at the top.
+const CAR = { accel: 9.5, brake: 18, top: 80 };
+// Lifting off without braking: drag and engine braking only.
+const LIFT_OFF = 3.5;
+const CRUISE = 22;
+const SPEED_PER_LAP_RATE = 75;
 
 function Tachometer({ rpm, gear }) {
   const needleRef = useRef(null);
@@ -72,8 +89,12 @@ function Lap() {
   const ref = useRef(null);
   const pathRef = useRef(null);
   const carRef = useRef(null);
+  const streakRef = useRef(null);
+  const carTween = useRef(null);
+  const lapRef = useRef(0);
   const kmRef = useRef(null);
   const gearRef = useRef(null);
+  const speedRef = useRef(null);
   const [cornerIndex, setCornerIndex] = useState(-1);
   const labels = TRACK_CORNERS;
 
@@ -81,21 +102,81 @@ function Lap() {
   const lap = useTransform(scrollYProgress, [0.05, 0.92], [0, 1], { clamp: true });
   const dashOffset = useTransform(lap, (p) => 1 - p);
 
-  // Scroll speed drives the engine: idle ~1,100 rpm, flat out near the limiter.
+  // Without WebGL there's no simulated car, so scroll speed drives the revs.
   const velocity = useVelocity(scrollY);
-  const rawRpm = useTransform(velocity, (v) => Math.min(8800, 1100 + Math.abs(v) * 2.6));
-  const rpm = useSpring(rawRpm, { stiffness: 140, damping: 20 });
+  const scrollRpm = useSpring(
+    useTransform(velocity, (v) => Math.min(8800, 1100 + Math.abs(v) * 2.6)),
+    { stiffness: 140, damping: 20 }
+  );
+  const rpm = useMotionValue(1100);
 
-  const placeCar = (p) => {
-    const path = pathRef.current;
-    if (!path || !carRef.current) return;
-    const pt = path.getPointAtLength(p * path.getTotalLength());
-    carRef.current.setAttribute("cx", pt.x);
-    carRef.current.setAttribute("cy", pt.y);
+  // The onboard drive behind the HUD; the plain map layout if WebGL fails.
+  const [realistic, setRealistic] = useState(true);
+  const realisticRef = useRef(true);
+  realisticRef.current = realistic;
+  const onUnsupported = useCallback(() => setRealistic(false), []);
+  useMotionValueEvent(scrollRpm, "change", (r) => {
+    if (!realisticRef.current) rpm.set(r);
+  });
+
+  // The car itself: speed, distance and acceleration, stepped every frame the
+  // scene draws. The tacho, gear and speed readout all come from here.
+  const car = useRef({ v: CRUISE, d: 0, a: 0, last: 0 });
+  const sceneUniforms = useCallback(
+    (t) => {
+      const s = car.current;
+      const dt = frameDelta(s, t);
+      const rate = scrollRate(s, lap.get(), dt);
+      const braking = rate < -0.02;
+      const want = braking ? CRUISE * 0.55 : Math.min(CAR.top, CRUISE + Math.max(0, rate) * SPEED_PER_LAP_RATE);
+      const a = drive(s, dt, want, braking ? CAR : { ...CAR, brake: LIFT_OFF });
+      const box = gearbox(s.v);
+      rpm.set(box.rpm);
+      if (gearRef.current) gearRef.current.textContent = String(box.gear);
+      if (speedRef.current) speedRef.current.textContent = String(Math.round(s.v * 3.6));
+      return {
+        uDist: s.d,
+        uVel: s.v,
+        uSpeed: s.v / CAR.top,
+        uAccel: Math.max(-1, Math.min(1, a / CAR.brake)),
+        uBend: 1,
+        uHills: 1,
+      };
+    },
+    [lap, rpm]
+  );
+
+  // The car rides the racing line and turns with every corner: a paused
+  // MotionPath tween whose progress is the lap. It never plays on its own.
+  useGSAP(
+    () => {
+      carTween.current = gsap.to(carRef.current, {
+        motionPath: { path: pathRef.current, align: pathRef.current, alignOrigin: [0.5, 0.5], autoRotate: true },
+        ease: "none",
+        duration: 1,
+        paused: true,
+      });
+      carTween.current.progress(lap.get());
+    },
+    { scope: ref }
+  );
+
+  // A glowing tail behind the car whose length follows the revs: the faster
+  // you scroll, the longer it gets. With pathLength 1 and one long gap, the
+  // single dash covers [lap - length, lap].
+  const drawStreak = (p, r) => {
+    const el = streakRef.current;
+    if (!el) return;
+    const length = Math.min(p, MAX_STREAK * Math.max(0, (r - 1500) / 7300));
+    el.style.strokeDasharray = `${length} 2`;
+    el.style.strokeDashoffset = `${length - p}`;
+    el.style.opacity = String(length / MAX_STREAK);
   };
 
   useMotionValueEvent(lap, "change", (p) => {
-    placeCar(p);
+    lapRef.current = p;
+    carTween.current?.progress(p);
+    drawStreak(p, rpm.get());
     if (kmRef.current) kmRef.current.textContent = (p * LAP_KM).toFixed(1);
     let idx = -1;
     labels.forEach((label, i) => {
@@ -105,17 +186,40 @@ function Lap() {
   });
 
   useMotionValueEvent(rpm, "change", (r) => {
+    drawStreak(lapRef.current, r);
+    if (realisticRef.current) return;
     if (gearRef.current) gearRef.current.textContent = String(Math.max(1, Math.min(6, 1 + Math.floor((r - 1100) / 1250))));
   });
 
-  useLayoutEffect(() => placeCar(0), []);
-
   return (
     <div ref={ref} className="relative h-[300vh] md:h-[380vh]">
-      <div className="sticky top-0 h-[100svh] overflow-hidden flex items-center">
-        <div className="b-shell w-full grid gap-8 lg:grid-cols-[1fr_300px] items-center pt-14">
-          <div className="relative">
-            <svg viewBox="5 38 580 420" className="w-full max-h-[52svh] lg:max-h-[72svh]" aria-label="Nürburgring Nordschleife lap map">
+      <div className="sticky top-0 h-[100svh] overflow-hidden flex items-end bg-[#07080a]">
+        {realistic && (
+          <>
+            <ShaderCanvas frag={NORDSCHLEIFE_FRAG} getUniforms={sceneUniforms} onUnsupported={onUnsupported} />
+            {/* Darken the bottom so the HUD reads over bright sky and kerbs. */}
+            <div
+              className="absolute inset-0 pointer-events-none"
+              style={{ background: "linear-gradient(180deg, rgba(4,5,8,0.35), transparent 30%, transparent 50%, rgba(4,5,8,0.78))" }}
+              aria-hidden="true"
+            />
+          </>
+        )}
+        <div
+          className={`relative b-shell w-full grid gap-6 items-end pb-8 md:pb-10 ${
+            realistic ? "lg:grid-cols-[minmax(0,380px)_1fr_auto]" : "lg:grid-cols-[1fr_300px] items-center pt-14"
+          }`}
+        >
+          <div
+            className={
+              realistic ? "hidden lg:block rounded-2xl bg-[rgba(6,7,10,0.55)] backdrop-blur-md p-3 max-w-[380px] w-full" : "relative"
+            }
+          >
+            <svg
+              viewBox="5 38 580 420"
+              className={realistic ? "w-full max-h-[26svh]" : "w-full max-h-[52svh] lg:max-h-[72svh]"}
+              aria-label="Nürburgring Nordschleife lap map"
+            >
               <path d={TRACK_D} fill="none" stroke="#2a2a2a" strokeWidth="12" strokeLinejoin="round" />
               <path
                 ref={pathRef}
@@ -166,12 +270,34 @@ function Lap() {
                   </text>
                 </g>
               ))}
-              <circle ref={carRef} r="6" fill={PAPER} stroke={dream.accent} strokeWidth="2.5" />
+              <path
+                ref={streakRef}
+                d={TRACK_D}
+                fill="none"
+                stroke="#ffd2ad"
+                strokeWidth="6"
+                strokeLinecap="round"
+                pathLength="1"
+                style={{ opacity: 0, filter: "drop-shadow(0 0 6px rgba(255,106,0,0.9))" }}
+                aria-hidden="true"
+              />
+              {/* Top-down GT3 car, drawn facing +x so autoRotate points it down the track. */}
+              <g ref={carRef} aria-hidden="true">
+                <rect x="0" y="0" width="22" height="11" rx="4" fill={PAPER} />
+                <rect x="14" y="2" width="5" height="7" rx="1.5" fill="#111" opacity="0.85" />
+                <rect x="1" y="4.2" width="18" height="2.6" fill={dream.accent} />
+                <rect x="-1.5" y="-0.5" width="3" height="12" rx="1" fill="#111" />
+              </g>
             </svg>
             <p className="b-mono text-[rgba(235,233,228,0.45)] mt-2">traced from the circuit map</p>
           </div>
 
-          <div className="flex lg:flex-col gap-8 items-center lg:items-start">
+          {realistic && <div className="hidden lg:block" aria-hidden="true" />}
+          <div
+            className={`flex lg:flex-col gap-6 lg:gap-8 items-center lg:items-start ${
+              realistic ? "rounded-2xl bg-[rgba(6,7,10,0.55)] backdrop-blur-md p-4 md:p-5" : ""
+            }`}
+          >
             <Tachometer rpm={rpm} gear={gearRef} />
             <div>
               <p className="b-mono text-[rgba(235,233,228,0.6)]">lap distance</p>
@@ -183,9 +309,16 @@ function Lap() {
               <p className="text-2xl font-bold tracking-[-0.03em] mt-1" style={{ color: dream.accent }}>
                 {cornerIndex >= 0 ? labels[cornerIndex]?.name : "Start / finish"}
               </p>
-              <p className="b-mono text-[rgba(235,233,228,0.45)] mt-5 max-w-[26ch]">
-                scroll faster to rev it
-              </p>
+              {realistic ? (
+                <p className="b-mono text-[rgba(235,233,228,0.6)] mt-5">
+                  <span ref={speedRef} className="text-[#ebe9e4] tabular-nums">
+                    {Math.round(CRUISE * 3.6)}
+                  </span>{" "}
+                  km/h <span className="text-[rgba(235,233,228,0.45)]">/ scroll to push</span>
+                </p>
+              ) : (
+                <p className="b-mono text-[rgba(235,233,228,0.45)] mt-5 max-w-[26ch]">scroll faster to rev it</p>
+              )}
             </div>
           </div>
         </div>
@@ -203,7 +336,7 @@ const FACTS = [
 
 export default function Nordschleife() {
   return (
-    <section id="nordschleife" className="relative bg-[#111] text-[#ebe9e4] pt-24 md:pt-32 pb-24 md:pb-32">
+    <section id="nordschleife" className="relative bg-[var(--paper)] text-[#ebe9e4] pt-24 md:pt-32 pb-24 md:pb-32">
       <ChapterHeader dream={dream} tone="dark" />
       <div className="mt-10">
         <Lap />

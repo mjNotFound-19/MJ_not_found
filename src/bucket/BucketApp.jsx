@@ -11,6 +11,8 @@ import Nordschleife from "./components/Nordschleife";
 import Ironman from "./components/Ironman";
 import Album from "./components/Album";
 import Outro from "./components/Outro";
+import ChapterRail from "./components/ChapterRail";
+import { useLenisScrollTrigger } from "./lib/gsap";
 import { ArriveFromPortfolio, LeaveToPortfolio } from "./components/PageTransitions";
 import { readArrival, useTransitionLinks } from "../lib/pageTransition";
 
@@ -21,6 +23,7 @@ const ARRIVAL_HERO_DELAY = 0.7;
 export default function BucketApp() {
   const reduceMotion = useMediaQuery("(prefers-reduced-motion: reduce)");
   useSmoothScroll(!reduceMotion);
+  useLenisScrollTrigger(!reduceMotion);
   useTransitionLinks();
   const [arrived] = useState(() => readArrival("bucket"));
 
@@ -47,6 +50,7 @@ export default function BucketApp() {
         </EffectBoundary>
         <Outro />
       </main>
+      <ChapterRail />
     </MotionConfig>
   );
 }

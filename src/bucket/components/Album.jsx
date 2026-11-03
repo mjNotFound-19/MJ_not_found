@@ -4,6 +4,10 @@ import { Pause, Play, Shuffle, Trash2 } from "lucide-react";
 import { ALBUM_CREDITS, DREAMS } from "../data";
 import ChapterHeader from "./ChapterHeader";
 import useSequencer, { ROWS, STEPS } from "./useSequencer";
+import { Draggable, gsap, useGSAP } from "../lib/gsap";
+import Footage from "./Footage";
+import { FOOTAGE } from "../footage";
+import { follow, frameDelta } from "../lib/motion";
 
 const dream = DREAMS.find((d) => d.id === "album");
 const BPM = 100;
@@ -75,10 +79,168 @@ function useAutoPreview(seq, inView) {
   return { previewing, cancel };
 }
 
+// A tiny scratch synth: short grains of band-passed noise whose pitch and
+// volume follow how fast the record is being dragged. Created on the first
+// press, which counts as the gesture browsers require before playing sound.
+function useScratch() {
+  const audio = useRef(null);
+  const last = useRef(0);
+
+  const ensure = () => {
+    if (audio.current) return audio.current;
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    if (!Ctx) return null;
+    const ctx = new Ctx();
+    const noise = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
+    const data = noise.getChannelData(0);
+    for (let i = 0; i < data.length; i += 1) data[i] = Math.random() * 2 - 1;
+    audio.current = { ctx, noise };
+    return audio.current;
+  };
+
+  const grain = (speed) => {
+    const a = audio.current;
+    const now = performance.now();
+    if (!a || now - last.current < 35 || speed < 0.5) return;
+    last.current = now;
+    const { ctx, noise } = a;
+    const t = ctx.currentTime;
+    const src = ctx.createBufferSource();
+    const band = ctx.createBiquadFilter();
+    const gain = ctx.createGain();
+    src.buffer = noise;
+    src.playbackRate.value = gsap.utils.clamp(0.4, 2.6, speed / 6);
+    band.type = "bandpass";
+    band.frequency.value = gsap.utils.clamp(300, 2400, speed * 90);
+    band.Q.value = 2.5;
+    gain.gain.setValueAtTime(0, t);
+    gain.gain.linearRampToValueAtTime(gsap.utils.clamp(0.04, 0.22, speed / 60), t + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.07);
+    src.connect(band).connect(gain).connect(ctx.destination);
+    src.start(t, Math.random() * 0.8, 0.08);
+  };
+
+  useEffect(() => () => audio.current?.ctx.close(), []);
+
+  return { ensure, grain };
+}
+
+// 33 1/3 rpm in radians per second: the speed the footage was filmed at.
+const PLAY_SPEED = ((100 / 3) * Math.PI * 2) / 60;
+
+// The record, filmed. The deck is on: its motor holds the platter at 33 rpm,
+// and the footage plays at whatever speed the platter is turning (the film has
+// real motion blur in it, so a stopped frame would look wrong). Grab the record
+// and push it to spin it faster (and scratch); let go and the motor eases it
+// back to speed.
+function VinylDeck({ onUnsupported }) {
+  const box = useRef(null);
+  const handle = useRef(null);
+  const scratch = useScratch();
+  const platter = useRef({ omega: PLAY_SPEED, last: 0, push: 0 });
+
+  useGSAP(
+    () => {
+      if (!window.matchMedia("(pointer: fine)").matches) return undefined;
+      let previous = 0;
+      let at = 0;
+      const [drag] = Draggable.create(handle.current, {
+        type: "rotation",
+        onPress() {
+          scratch.ensure()?.ctx.resume();
+          previous = this.rotation;
+          at = performance.now();
+        },
+        onDrag() {
+          const now = performance.now();
+          const dt = Math.max(0.008, (now - at) / 1000);
+          const step = this.rotation - previous;
+          scratch.grain(Math.abs(step));
+          // The hand sets the platter's speed while it's held (forward only:
+          // the footage can't run backwards).
+          platter.current.push = Math.max(0, ((step * Math.PI) / 180) / dt);
+          previous = this.rotation;
+          at = now;
+        },
+        onRelease() {
+          platter.current.omega = Math.max(platter.current.omega, platter.current.push);
+          platter.current.push = 0;
+        },
+      });
+      return () => drag.kill();
+    },
+    { scope: box }
+  );
+
+  const getRate = useCallback(() => {
+    const s = platter.current;
+    const dt = frameDelta(s, performance.now() / 1000);
+    s.omega = s.push > 0 ? follow(s.omega, s.push, dt, 0.08) : follow(s.omega, PLAY_SPEED, dt, 0.6);
+    return s.omega / PLAY_SPEED;
+  }, []);
+
+  return (
+    <div ref={box} className="relative aspect-[5/4] w-full rounded-[22px] overflow-hidden bg-[#050506]">
+      <Footage
+        sources={FOOTAGE.vinyl.sources}
+        poster={FOOTAGE.vinyl.poster}
+        getRate={getRate}
+        onUnsupported={onUnsupported}
+      />
+      <div
+        ref={handle}
+        className="absolute inset-0 [@media(pointer:fine)]:cursor-grab [@media(pointer:fine)]:active:cursor-grabbing"
+        aria-hidden="true"
+      />
+      <p className="absolute bottom-3 inset-x-0 text-center b-mono text-[rgba(235,233,228,0.6)] hidden [@media(pointer:fine)]:block pointer-events-none">
+        grab the record to push it
+      </p>
+    </div>
+  );
+}
+
 function Record({ spinning }) {
+  const platter = useRef(null);
+  const scratch = useScratch();
+
+  // Grab the record and spin it; let go and it coasts to a stop. The CSS spin
+  // while the loop plays lives on the inner group, so the two add up.
+  useGSAP(
+    () => {
+      // Mouse and trackpad only: on a phone the record fills the screen width,
+      // and grabbing it would stop the page from scrolling.
+      if (!window.matchMedia("(pointer: fine)").matches) return undefined;
+      let previous = null;
+      const [drag] = Draggable.create(platter.current, {
+        type: "rotation",
+        inertia: true,
+        // A flick coasts a turn or two, like a real platter, not forever.
+        throwResistance: 3000,
+        onPress() {
+          scratch.ensure()?.ctx.resume();
+          previous = this.rotation;
+        },
+        onDrag() {
+          scratch.grain(Math.abs(this.rotation - previous));
+          previous = this.rotation;
+        },
+      });
+      return () => drag.kill();
+    },
+    { scope: platter }
+  );
+
   return (
     <div className="relative aspect-square w-full max-w-[420px]">
-      <svg viewBox="0 0 400 400" className="w-full h-full" aria-hidden="true">
+      <p className="absolute -bottom-8 inset-x-0 text-center b-mono text-[rgba(235,233,228,0.45)] hidden [@media(pointer:fine)]:block">
+        grab the record to spin it
+      </p>
+      <svg
+        ref={platter}
+        viewBox="0 0 400 400"
+        className="w-full h-full [@media(pointer:fine)]:cursor-grab [@media(pointer:fine)]:active:cursor-grabbing"
+        aria-hidden="true"
+      >
         <g
           className="b-record-spin"
           style={{ animationPlayState: spinning ? "running" : "paused", animationDuration: "1.8s" }}
@@ -198,20 +360,29 @@ export default function Album() {
   const stageRef = useRef(null);
   const inView = useInView(stageRef, { amount: 0.5 });
   const preview = useAutoPreview(seq, inView);
+  const [realistic, setRealistic] = useState(true);
+  const onUnsupported = useCallback(() => setRealistic(false), []);
 
   return (
-    <section id="album" className="relative bg-[#111] text-[#ebe9e4] pt-24 md:pt-32 pb-24 md:pb-32">
+    <section id="album" className="relative bg-[var(--paper)] text-[#ebe9e4] pt-24 md:pt-32 pb-24 md:pb-32">
       <ChapterHeader dream={dream} tone="dark" />
 
-      <div ref={stageRef} className="b-shell mt-14 grid gap-10 lg:grid-cols-[0.8fr_1.2fr] items-center">
+      <div
+        ref={stageRef}
+        className={`b-shell mt-14 grid gap-10 items-center ${realistic ? "lg:grid-cols-[1.05fr_1fr]" : "lg:grid-cols-[0.8fr_1.2fr]"}`}
+      >
         <motion.div
-          initial={{ opacity: 0, rotate: -20, x: -60 }}
-          whileInView={{ opacity: 1, rotate: 0, x: 0 }}
+          initial={realistic ? { opacity: 0, y: 40 } : { opacity: 0, rotate: -20, x: -60 }}
+          whileInView={realistic ? { opacity: 1, y: 0 } : { opacity: 1, rotate: 0, x: 0 }}
           viewport={{ once: true, amount: 0.4 }}
           transition={{ duration: 1.2, ease: [0.76, 0, 0.24, 1] }}
-          className="justify-self-center w-full max-w-[420px]"
+          className={`justify-self-center w-full ${realistic ? "" : "max-w-[420px]"}`}
         >
-          <Record spinning={seq.playing} />
+          {realistic ? (
+            <VinylDeck onUnsupported={onUnsupported} />
+          ) : (
+            <Record spinning={seq.playing} />
+          )}
         </motion.div>
         <Sequencer seq={seq} preview={preview} />
       </div>
@@ -238,9 +409,15 @@ export default function Album() {
           </ul>
         </div>
         <div className="self-end">
-          <p className="b-serif italic text-[clamp(2.2rem,5vw,4rem)] leading-[1] tracking-[-0.02em]">
+          <motion.p
+            className="b-serif italic text-[clamp(2.2rem,5vw,4rem)] leading-[1] tracking-[-0.02em]"
+            initial={{ opacity: 0, y: 16 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.6 }}
+            transition={{ duration: 1.4, ease: [0.22, 1, 0.36, 1] }}
+          >
             Every sound on it, from the first idea to the final master, made by one person.
-          </p>
+          </motion.p>
           <p className="b-mono text-[rgba(235,233,228,0.6)] mt-6">tracklist: to be written</p>
         </div>
       </div>
