@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import Lenis from "lenis";
+import "lenis/dist/lenis.css";
 import { setLenis, scrollToId, expoOut } from "../lib/scroll";
 
 // Lenis smooths wheel/trackpad scrolling; touch devices keep native scrolling.
