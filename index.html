@@ -1,59 +1,769 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self'; media-src 'self'; worker-src 'none'; object-src 'none'; frame-src 'none'; base-uri 'self'; form-action 'none'; upgrade-insecure-requests">
-    <meta name="referrer" content="strict-origin-when-cross-origin">
+<head>
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self'; media-src 'self'; worker-src 'none'; object-src 'none'; frame-src 'none'; base-uri 'self'; form-action 'none'; upgrade-insecure-requests">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
 
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="icon" type="image/svg+xml" href="/icons/mj.svg" />
-    <link rel="apple-touch-icon" href="/icons/mj-180.png" />
-    <meta name="theme-color" content="#01030c" />
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Manas Jha - AI Engineer</title>
+<meta name="description" content="Manas Jha is an AI Engineer in Atlanta. He builds AI agents that ship real software, and the tests that prove they work.">
+<meta property="og:title" content="Manas Jha - AI Engineer">
+<meta property="og:description" content="Build it. Break it. Measure it. Ship it.">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#05070c">
+<link rel="icon" type="image/svg+xml" href="/icons/mj.svg">
+<link rel="apple-touch-icon" href="/icons/mj-180.png">
+<meta property="og:url" content="https://manasjha.online/">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter+Tight:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="/theme-init.js"></script>
+<style>
+  /* ---------- Tokens ---------- */
+  :root {
+    --bg: #f5f4f0; --surface: #ffffff; --surface-2: #ecebe5; --ink: #14151a; --muted: #595c67;
+    --line: rgba(20, 21, 26, 0.12); --line-strong: rgba(20, 21, 26, 0.3);
+    --accent: #0b5fd4; --accent-ink: #ffffff; --ok: #0f7a57; --bad: #c0362c; --run: #a56a00;
+    --shadow: 0 1px 2px rgba(20, 21, 26, 0.04), 0 16px 36px -20px rgba(20, 21, 26, 0.25);
+    --radius: 18px; --shell: min(1140px, 100% - 40px);
+    --sans: "Inter Tight", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    --serif: "Instrument Serif", "Iowan Old Style", Georgia, serif;
+    --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    --ease: cubic-bezier(0.22, 1, 0.36, 1);
+    color-scheme: light;
+  }
+  :root[data-theme="dark"], .stage {
+    --bg: #05070c; --surface: #0e1118; --surface-2: #171b25; --ink: #eaf1f7; --muted: #98a3b3;
+    --line: rgba(234, 241, 247, 0.12); --line-strong: rgba(234, 241, 247, 0.32);
+    --accent: #3cc4ff; --accent-ink: #04121b; --ok: #48d7a4; --bad: #ff6b5e; --run: #ffc457;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.5), 0 20px 46px -22px rgba(0, 0, 0, 0.9);
+  }
+  :root[data-theme="dark"] { color-scheme: dark; }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme]) {
+      --bg: #05070c; --surface: #0e1118; --surface-2: #171b25; --ink: #eaf1f7; --muted: #98a3b3;
+      --line: rgba(234, 241, 247, 0.12); --line-strong: rgba(234, 241, 247, 0.32);
+      --accent: #3cc4ff; --accent-ink: #04121b; --ok: #48d7a4; --bad: #ff6b5e; --run: #ffc457;
+      color-scheme: dark;
+    }
+  }
 
-    <title>Manas Jha - Software Engineer, AI Coding Agents</title>
-    <meta
-      name="description"
-      content="Manas Jha is a software engineer in Atlanta building a local-first operating system for AI agents, working as an AI Engineer at DevHawk AI, and shipping data-intensive systems on Google Cloud."
-    />
-    <meta property="og:title" content="Manas Jha - Software Engineer" />
-    <meta
-      property="og:description"
-      content="AI coding agents, LLM evaluation, and cloud data systems. Purdue AI 2026, based in Atlanta."
-    />
-    <meta property="og:url" content="https://manasjha.online/" />
-    <meta property="og:type" content="website" />
+  /* ---------- Base ---------- */
+  *, *::before, *::after { box-sizing: border-box; }
+  html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 400 1rem/1.6 var(--sans); -webkit-font-smoothing: antialiased; overflow-x: clip; }
+  h1, h2, h3, p, ul, ol, dl, dd, figure { margin: 0; }
+  ul, ol { padding: 0; list-style: none; }
+  a { color: inherit; text-decoration: none; }
+  button, input { font: inherit; color: inherit; }
+  button { cursor: pointer; background: none; border: 0; padding: 0; }
+  img, canvas { display: block; max-width: 100%; }
+  p { text-wrap: pretty; }
+  ::-moz-selection { background: var(--accent); color: var(--accent-ink); }
+  ::selection { background: var(--accent); color: var(--accent-ink); }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 6px; }
+  .shell { width: var(--shell); margin-inline: auto; }
+  .mono { font: 500 0.76rem/1.5 var(--mono); letter-spacing: 0.01em; }
+  .muted { color: var(--muted); }
+  .sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .js-only { display: none !important; }
+  .js .js-only { display: revert !important; }
+  .js .js-flex { display: flex !important; }
+  .js .js-grid { display: grid !important; }
+  .js .js-block { display: block !important; }
+  .skip { position: absolute; left: 12px; top: -60px; z-index: 100; padding: 10px 14px; border-radius: 10px; background: var(--ink); color: var(--bg); }
+  .skip:focus { top: 12px; }
+  em { font-family: var(--serif); font-style: italic; font-weight: 400; letter-spacing: -0.01em; }
 
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@300;400;600;800&family=JetBrains+Mono:wght@400;500;700&family=Inter+Tight:wght@800&family=Tektur:wdth,wght@75..100,400..900&family=Fira+Code:wght@400;500;600&display=swap"
-      rel="stylesheet"
-    />
+  /* ---------- Header: the page as a pipeline ---------- */
+  .top { position: sticky; top: 0; z-index: 50; background: color-mix(in srgb, var(--bg) 86%, transparent); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border-bottom: 1px solid var(--line); }
+  .top-in { display: flex; align-items: center; justify-content: space-between; gap: 14px; height: 60px; }
+  .brand { font-weight: 700; letter-spacing: -0.02em; min-height: 44px; display: inline-flex; align-items: center; gap: 9px; }
+  .brand i { width: 9px; height: 9px; border-radius: 2px; background: var(--accent); }
+  .pipe { display: flex; align-items: center; gap: 6px; }
+  .pipe a { display: inline-flex; align-items: center; gap: 7px; min-height: 40px; padding: 0 8px; border-radius: 999px; color: var(--muted); font: 500 0.78rem var(--mono); transition: color 0.2s ease; }
+  .pipe a:hover { color: var(--ink); }
+  .pipe a i { width: 11px; height: 11px; border-radius: 50%; border: 1.5px solid var(--line-strong); transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease; }
+  .pipe a[data-state="running"] { color: var(--ink); }
+  .pipe a[data-state="running"] i { border-color: var(--run); background: var(--run); box-shadow: 0 0 0 4px color-mix(in srgb, var(--run) 25%, transparent); animation: pulse 1.4s ease-in-out infinite; }
+  .pipe a[data-state="passed"] i { border-color: var(--ok); background: var(--ok); }
+  .pipe .wire { width: 18px; height: 1.5px; background: var(--line-strong); }
+  .pipe .lbl { display: none; }
+  .pipe a[data-state="running"] .lbl { display: inline; }
+  @keyframes pulse { 50% { box-shadow: 0 0 0 7px transparent; } }
+  .tools-nav { display: flex; align-items: center; gap: 4px; }
+  .tools-nav a { display: none; padding: 8px 10px; border-radius: 999px; color: var(--muted); font-size: 0.9rem; }
+  .tools-nav a:hover { color: var(--ink); }
+  .icon-btn { width: 40px; height: 40px; display: grid; place-items: center; border: 1px solid var(--line); border-radius: 50%; background: var(--surface); color: var(--muted); }
+  .icon-btn:hover { color: var(--ink); border-color: var(--line-strong); }
+  .icon-btn svg { width: 18px; height: 18px; }
+  .icon-btn .moon, [data-theme="dark"] .icon-btn .sun { display: none; }
+  [data-theme="dark"] .icon-btn .moon { display: block; }
+  @media (min-width: 800px) {
+    .pipe .lbl { display: inline; }
+    .pipe .wire { width: 26px; }
+    .tools-nav a { display: inline-block; }
+  }
 
-    <style>
-      /* clip (not hidden) so body never becomes its own scroll container */
-      html, body {
-        width: 100%;
-        overflow-x: clip;
-        background: #01030c;
-      }
+  /* ---------- Stage: the always-dark hero ---------- */
+  .stage { position: relative; background: var(--bg); color: var(--ink); overflow: hidden; isolation: isolate; }
+  #rain { position: absolute; inset: 0; width: 100%; height: 100%; z-index: -2; }
+  /* Keeps the words readable over the rain: dark where the text sits. */
+  .stage::after { content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+    background: radial-gradient(90% 80% at 22% 45%, rgba(5, 7, 12, 0.94), rgba(5, 7, 12, 0.55) 60%, rgba(5, 7, 12, 0.15)), linear-gradient(180deg, transparent 70%, var(--bg)); }
+  /* minmax(0, 1fr): the column may shrink below its content's natural width,
+     so long lines wrap instead of pushing past a phone's edge. */
+  .stage-in { display: grid; grid-template-columns: minmax(0, 1fr); gap: 36px; align-items: center; min-height: calc(100svh - 60px); padding: clamp(36px, 6vw, 72px) 0; }
+  .status { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; color: var(--muted); }
+  .status .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 0 4px color-mix(in srgb, var(--ok) 22%, transparent); }
+  .status b { color: var(--ink); font-weight: 500; }
+  h1 { margin-top: 18px; font-weight: 800; font-size: clamp(3.4rem, 12vw, 9rem); line-height: 0.88; letter-spacing: -0.06em; }
+  .pitch { margin-top: 22px; max-width: 30ch; font-size: clamp(1.35rem, 2.6vw, 2rem); line-height: 1.18; letter-spacing: -0.025em; text-wrap: balance; }
+  .pitch em { color: var(--accent); }
+  .sub { margin-top: 16px; max-width: 52ch; color: var(--muted); }
 
-      img, video {
-        max-width: 100%;
-        height: auto;
-      }
+  /* The command line: the old typing effect, but you do the typing. */
+  .term { margin-top: 28px; display: flex; align-items: center; gap: 10px; max-width: 560px; padding: 6px 6px 6px 16px; border: 1px solid var(--line-strong); border-radius: 14px; background: rgba(14, 17, 24, 0.82); backdrop-filter: blur(6px); }
+  .term:focus-within { border-color: var(--accent); box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 18%, transparent); }
+  .term .prompt { color: var(--accent); white-space: nowrap; }
+  .term input { flex: 1; min-width: 0; min-height: 44px; border: 0; outline: 0; background: none; font: 500 0.92rem var(--mono); }
+  .term input::-moz-placeholder { color: var(--muted); }
+  .term input::placeholder { color: var(--muted); }
+  .term button { min-height: 40px; padding: 0 14px; border-radius: 10px; background: var(--accent); color: var(--accent-ink); font: 700 0.8rem var(--mono); }
+  .term-chips { margin-top: 12px; flex-wrap: wrap; gap: 8px; max-width: 560px; }
+  .term-chips button { min-height: 36px; padding: 0 12px; border: 1px solid var(--line); border-radius: 999px; color: var(--muted); font: 500 0.76rem var(--mono); transition: color 0.2s ease, border-color 0.2s ease; }
+  .term-chips button:hover { color: var(--ink); border-color: var(--line-strong); }
+  #term-out { margin-top: 12px; max-width: 560px; min-height: 3.2em; color: var(--muted); white-space: pre-wrap; }
+  #term-out b { color: var(--ink); font-weight: 500; }
+  .nojs-links { margin-top: 26px; display: flex; flex-wrap: wrap; gap: 12px; }
+  .js .nojs-links { display: none; }
 
-      * {
-        box-sizing: border-box;
-      }
-    </style>
-    <script type="module" crossorigin src="/assets/main-7dRzGZu2.js"></script>
-    <link rel="modulepreload" crossorigin href="/assets/pageTransition-DaBvvqNn.js">
-    <link rel="stylesheet" crossorigin href="/assets/pageTransition-D2oTg1Kg.css">
-    <link rel="stylesheet" crossorigin href="/assets/main-Bale1YJp.css">
-  </head>
+  /* The portrait: code that resolves into the person under the pointer. */
+  .portrait { position: relative; width: min(100%, 420px); aspect-ratio: 4 / 5; justify-self: center; border: 1px solid var(--line); border-radius: 22px; overflow: hidden; background: #070a10; }
+  .portrait img, .portrait canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+  /* Same framing as the canvas version: whole cut-out, headroom above, feet on the bottom edge. */
+  .portrait img { -o-object-fit: contain; object-fit: contain; -o-object-position: 50% 100%; object-position: 50% 100%; padding: 10% 5% 0; }
+  .portrait canvas { opacity: 0; transition: opacity 0.5s ease; cursor: crosshair; }
+  .portrait.is-ready canvas { opacity: 1; }
+  .portrait.is-ready img { visibility: hidden; }
+  .portrait figcaption { position: absolute; left: 12px; right: 12px; bottom: 10px; display: flex; justify-content: space-between; align-items: center; gap: 10px; color: rgba(234, 241, 247, 0.75); pointer-events: none; }
+  .portrait figcaption button { pointer-events: auto; min-height: 34px; padding: 0 10px; border: 1px solid rgba(234, 241, 247, 0.3); border-radius: 999px; background: rgba(5, 7, 12, 0.6); font: 500 0.72rem var(--mono); color: #eaf1f7; }
+  @media (min-width: 900px) {
+    .stage-in { grid-template-columns: minmax(0, 1.25fr) minmax(300px, 0.75fr); gap: 56px; }
+    .portrait { justify-self: end; }
+  }
 
-  <body class="bg-secondary text-textLight">
-    <div id="root"></div>
-  </body>
+  /* ---------- Sections ---------- */
+  section { padding: clamp(60px, 8vw, 108px) 0; scroll-margin-top: 60px; }
+  .sec-head { display: grid; gap: 12px; margin-bottom: clamp(26px, 4vw, 44px); }
+  .stage-tag { display: inline-flex; align-items: center; gap: 10px; color: var(--muted); }
+  .stage-tag b { padding: 3px 9px; border-radius: 6px; background: var(--ink); color: var(--bg); font-weight: 700; letter-spacing: 0.06em; }
+  h2 { font-weight: 700; font-size: clamp(1.9rem, 4.4vw, 3.3rem); line-height: 1.04; letter-spacing: -0.04em; text-wrap: balance; max-width: 20ch; }
+  h2 em { color: var(--accent); }
+  .sec-head > p { max-width: 58ch; color: var(--muted); }
+  .sec-row { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 16px; }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: clamp(20px, 2.6vw, 28px); }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chips li { font: 500 0.72rem/1.3 var(--mono); padding: 5px 9px; border-radius: 999px; background: var(--surface-2); color: var(--muted); }
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-height: 46px; padding: 0 18px; border-radius: 999px; font-weight: 600; border: 1px solid var(--line-strong); transition: transform 0.25s var(--ease), border-color 0.2s ease, background-color 0.2s ease; }
+  .btn:hover { transform: translateY(-1px); border-color: var(--ink); }
+  .btn-primary { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+  .link { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; font-weight: 600; }
+  .link::after { content: "↗"; font-family: var(--mono); transition: transform 0.25s var(--ease); }
+  .link:hover { color: var(--accent); }
+  .link:hover::after { transform: translate(2px, -2px); }
+  .bullets { display: grid; gap: 8px; color: var(--muted); }
+  .bullets li { position: relative; padding-left: 18px; }
+  .bullets li::before { content: ""; position: absolute; left: 2px; top: 0.75em; width: 7px; height: 1px; background: var(--line-strong); }
+
+  /* Statement: each word fills in as it crosses the screen (CSS only). */
+  .statement { padding: clamp(48px, 7vw, 88px) 0 0; }
+  .statement p { font-weight: 600; font-size: clamp(1.7rem, 4.6vw, 3.6rem); line-height: 1.08; letter-spacing: -0.04em; max-width: 22ch; }
+  @supports (animation-timeline: view()) {
+    @media (prefers-reduced-motion: no-preference) {
+      .statement span { opacity: 0.18; animation: ink linear both; animation-timeline: view(); animation-range: cover calc(18% + var(--i) * 1.6%) cover calc(30% + var(--i) * 1.6%); }
+      @keyframes ink { to { opacity: 1; } }
+    }
+  }
+
+  /* ---------- Build: projects ---------- */
+  .work { display: grid; gap: 16px; }
+  .proj { display: flex; flex-direction: column; gap: 14px; transition: transform 0.35s var(--ease), box-shadow 0.35s var(--ease), border-color 0.25s ease; }
+  .proj:hover { transform: translateY(-3px); box-shadow: var(--shadow); border-color: var(--line-strong); }
+  .proj-tag { display: inline-flex; align-items: center; gap: 8px; color: var(--muted); }
+  .proj-tag i { width: 8px; height: 8px; border-radius: 2px; background: var(--c, var(--accent)); }
+  .proj h3 { font-size: clamp(1.25rem, 2.2vw, 1.6rem); font-weight: 700; letter-spacing: -0.03em; line-height: 1.12; }
+  .proj > p { color: var(--muted); }
+  .metrics { display: flex; flex-wrap: wrap; gap: 10px 28px; padding: 14px 0; border-block: 1px solid var(--line); }
+  .metrics dd { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.03em; line-height: 1.1; font-variant-numeric: tabular-nums; }
+  .metrics dt { color: var(--muted); font-size: 0.85rem; }
+  details.more { margin-top: auto; }
+  details.more summary { list-style: none; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; min-height: 44px; font-weight: 600; }
+  details.more summary::-webkit-details-marker { display: none; }
+  details.more summary::before { content: "+"; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; border: 1px solid var(--line-strong); font: 500 0.9rem/1 var(--mono); }
+  .proj-full { display: grid; gap: 14px; padding-top: 6px; }
+  .proj-links { display: flex; flex-wrap: wrap; gap: 4px 20px; }
+  @media (min-width: 860px) { .work { grid-template-columns: repeat(2, 1fr); } .f1 { grid-column: 1 / -1; } }
+
+  /* f1.h showpiece: live forecast + a start-lights reaction test */
+  .f1 { --c: #ff8000; display: grid; gap: 24px; background: #0b0c0f; color: #eef1f5; border-color: rgba(238, 241, 245, 0.14); --muted: #9aa3b0; --line: rgba(238, 241, 245, 0.14); --line-strong: rgba(238, 241, 245, 0.34); --surface-2: #1a1c22; --ink: #eef1f5; --bg: #0b0c0f; }
+  .f1:hover { transform: none; }
+  .f1-col { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+  #f1-odds { display: grid; gap: 8px; }
+  #f1-odds li { display: grid; grid-template-columns: 44px 1fr 52px; align-items: center; gap: 10px; font: 500 0.8rem var(--mono); }
+  #f1-odds .bar { height: 8px; border-radius: 999px; background: rgba(238, 241, 245, 0.1); overflow: hidden; }
+  #f1-odds .bar span { display: block; height: 100%; border-radius: inherit; transform-origin: left; transform: scaleX(0); transition: transform 0.9s var(--ease); }
+  #f1-odds.is-in .bar span { transform: scaleX(var(--w)); }
+  .lights { align-self: start; display: grid; gap: 14px; padding: 20px; border: 1px solid var(--line); border-radius: 16px; background: #07080a; }
+  .gantry { display: flex; justify-content: center; gap: clamp(8px, 2vw, 14px); padding: 14px; border-radius: 12px; background: #111318; }
+  .gantry span { width: clamp(30px, 7vw, 44px); aspect-ratio: 1; border-radius: 50%; background: #1d0707; border: 2px solid #2a2d35; transition: background-color 0.08s linear, box-shadow 0.08s linear; }
+  .gantry span.is-on { background: #ff2a1f; box-shadow: 0 0 22px 4px rgba(255, 42, 31, 0.6); }
+  #lights-msg { min-height: 3em; text-align: center; color: var(--muted); }
+  #lights-msg b { display: block; font: 700 1.9rem/1.1 var(--sans); letter-spacing: -0.03em; color: #eef1f5; font-variant-numeric: tabular-nums; }
+  #lights-btn { min-height: 56px; border-radius: 14px; background: #ff8000; color: #120800; font-weight: 800; letter-spacing: -0.01em; touch-action: manipulation; -webkit-user-select: none; -moz-user-select: none; user-select: none; }
+  #lights-btn[data-phase="wait"] { background: #2a2d35; color: #eef1f5; }
+  #lights-btn[data-phase="go"] { background: #48d7a4; color: #04130d; }
+  @media (min-width: 860px) { .f1 { grid-template-columns: 1.15fr 0.85fr; gap: 44px; } }
+
+  /* Case file: a project card grows into a full sheet. */
+  dialog { padding: 0; border: 0; background: none; color: var(--ink); max-width: none; max-height: none; }
+  dialog::backdrop { background: rgba(5, 7, 12, 0.55); backdrop-filter: blur(4px); }
+  #sheet { width: min(760px, 100% - 24px); margin: auto; }
+  .sheet-panel { position: relative; max-height: min(86vh, 860px); overflow: auto; background: var(--surface); border: 1px solid var(--line-strong); border-radius: 22px; padding: clamp(22px, 4vw, 40px); display: grid; gap: 16px; box-shadow: 0 40px 100px -30px rgba(0, 0, 0, 0.7); }
+  .sheet-panel h3 { font-size: clamp(1.6rem, 4vw, 2.4rem); font-weight: 700; letter-spacing: -0.035em; line-height: 1.08; padding-right: 48px; }
+  .sheet-panel > p { color: var(--muted); }
+  #sheet-close { position: sticky; top: 0; justify-self: end; margin-bottom: -56px; z-index: 2; }
+  ::view-transition-group(sheet) { animation-duration: 0.42s; animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1); }
+  html.theme-vt::view-transition-old(root), html.theme-vt::view-transition-new(root) { animation: none; mix-blend-mode: normal; }
+
+  /* ---------- Break ---------- */
+  .three { display: grid; gap: 16px; }
+  .three h3 { font-size: 1.15rem; font-weight: 700; letter-spacing: -0.02em; }
+  .three .mono { color: var(--bad); display: block; margin-bottom: 14px; }
+  .three p { margin-top: 8px; color: var(--muted); }
+  @media (min-width: 860px) { .three { grid-template-columns: repeat(3, 1fr); } }
+
+  /* ---------- Measure: the numbers as a test run ---------- */
+  .run { background: #07090e; color: #eaf1f7; border-color: rgba(234, 241, 247, 0.14); font-family: var(--mono); --muted: #98a3b3; --ok: #48d7a4; --run: #ffc457; }
+  .run-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; padding-bottom: 14px; border-bottom: 1px solid rgba(234, 241, 247, 0.14); color: var(--muted); font-size: 0.8rem; }
+  .run-bar button { min-height: 36px; padding: 0 12px; border: 1px solid rgba(234, 241, 247, 0.3); border-radius: 8px; color: #eaf1f7; font: 500 0.76rem var(--mono); }
+  .tests { display: grid; }
+  .tests li { display: grid; grid-template-columns: 22px 1fr; gap: 2px 10px; padding: 14px 0; border-bottom: 1px dashed rgba(234, 241, 247, 0.12); }
+  .tests .t-state { color: var(--ok); font-weight: 700; }
+  .tests code { font: inherit; font-size: 0.84rem; color: #c9d4e0; word-break: break-all; }
+  .tests .t-val { grid-column: 2; font: 800 clamp(1.6rem, 4vw, 2.4rem)/1.1 var(--sans); letter-spacing: -0.04em; font-variant-numeric: tabular-nums; }
+  .tests .t-note { grid-column: 2; color: var(--muted); font-size: 0.8rem; }
+  .tests li[data-s="idle"] .t-state, .tests li[data-s="idle"] .t-val { color: #46505e; }
+  .tests li[data-s="run"] .t-state, .tests li[data-s="run"] .t-val { color: var(--run); }
+  #tests-sum { padding-top: 14px; font-size: 0.84rem; color: var(--ok); }
+  .quote { margin-top: 28px; font: 400 clamp(1.4rem, 3vw, 2.2rem)/1.25 var(--serif); font-style: italic; max-width: 34ch; text-wrap: balance; }
+  @media (min-width: 760px) {
+    .tests li { grid-template-columns: 22px minmax(0, 1.1fr) auto; align-items: baseline; }
+    .tests .t-val { grid-column: 3; grid-row: 1; text-align: right; }
+    .tests .t-note { grid-column: 2 / 4; }
+  }
+
+  /* ---------- Ship: experience ---------- */
+  #strip { position: relative; margin-bottom: 26px; padding: 14px 0 26px; }
+  #strip .lane-wrap { position: relative; }
+  #strip button { position: absolute; height: 12px; border-radius: 999px; background: var(--line-strong); transition: background-color 0.2s ease, transform 0.2s ease; }
+  #strip button::after { content: ""; position: absolute; inset: -4px 0; }
+  #strip button:hover, #strip button.is-hot { background: var(--accent); transform: scaleY(1.35); }
+  #strip button.is-live { background: var(--ok); }
+  #strip .tick { position: absolute; bottom: 0; transform: translateX(-50%); color: var(--muted); font: 500 0.7rem var(--mono); }
+  #strip .tick::before { content: ""; position: absolute; left: 50%; bottom: 1.5em; width: 1px; height: 400px; max-height: 60px; background: var(--line); }
+  #strip-label { min-height: 1.5em; color: var(--muted); }
+  .xp-list { border-top: 1px solid var(--line); }
+  .xp { border-bottom: 1px solid var(--line); scroll-margin-top: 90px; }
+  .xp summary { list-style: none; cursor: pointer; display: grid; grid-template-columns: 1fr auto; gap: 6px 16px; padding: 18px 0; align-items: center; }
+  .xp summary::-webkit-details-marker { display: none; }
+  .xp summary:hover .xp-role, .xp.is-hot .xp-role { color: var(--accent); }
+  .xp-when { grid-column: 1 / -1; color: var(--muted); }
+  .xp-role { font-size: 1.12rem; font-weight: 600; letter-spacing: -0.015em; line-height: 1.25; transition: color 0.2s ease; }
+  .xp-org { display: block; color: var(--muted); font-size: 0.95rem; font-weight: 400; }
+  .xp-badge { grid-column: 1 / -1; color: var(--muted); font-size: 0.9rem; }
+  .xp-badge b { color: var(--ink); font-weight: 600; }
+  .xp-plus { grid-row: 2; grid-column: 2; display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--line); font: 500 1rem/1 var(--mono); transition: transform 0.3s var(--ease); }
+  .xp[open] .xp-plus { transform: rotate(45deg); }
+  .xp .bullets { padding: 0 0 22px; max-width: 72ch; }
+  .live { display: inline-block; margin-left: 8px; padding: 2px 8px; border-radius: 999px; font: 500 0.68rem var(--mono); vertical-align: middle; color: var(--ok); background: color-mix(in srgb, var(--ok) 14%, transparent); }
+  .pill-btn { min-height: 40px; padding: 0 14px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); color: var(--muted); font-size: 0.88rem; }
+  .pill-btn:hover { color: var(--ink); border-color: var(--line-strong); }
+  @media (min-width: 860px) {
+    .xp summary { grid-template-columns: 170px minmax(0, 1.3fr) minmax(0, 1fr) 32px; gap: 24px; }
+    .xp-when, .xp-badge { grid-column: auto; }
+    .xp-plus { grid-row: auto; grid-column: auto; }
+    .xp .bullets { padding-left: 194px; }
+  }
+  .two { display: grid; gap: 16px; margin-top: 40px; }
+  .rows li { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 13px 0; border-bottom: 1px solid var(--line); }
+  .rows li:last-child { border-bottom: 0; }
+  .rows b { font-weight: 600; display: block; line-height: 1.3; }
+  .rows span { color: var(--muted); font-size: 0.9rem; }
+  .card > h3 { font-size: 1.15rem; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 6px; }
+  .goals { counter-reset: g; display: grid; gap: 10px; margin: 14px 0 10px; }
+  .goals li { counter-increment: g; display: flex; gap: 12px; color: var(--muted); }
+  .goals li::before { content: "0" counter(g); font: 500 0.75rem/1.9 var(--mono); color: var(--accent); }
+  @media (min-width: 860px) { .two { grid-template-columns: repeat(2, 1fr); } }
+
+  /* ---------- Tools: skills with proof ---------- */
+  .filter { position: relative; width: min(100%, 340px); }
+  .filter input { width: 100%; min-height: 46px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--line-strong); background: var(--surface); }
+  .filter input::-moz-placeholder { color: var(--muted); }
+  .filter input::placeholder { color: var(--muted); }
+  .skill-groups { border-top: 1px solid var(--line); }
+  .skill-group { display: grid; gap: 12px; padding: 20px 0; border-bottom: 1px solid var(--line); transition: opacity 0.25s ease; }
+  .skill-group h3 { font-size: 1rem; font-weight: 600; }
+  .skill-group.is-empty { opacity: 0.35; }
+  .chips li.is-hit { background: var(--accent); color: var(--accent-ink); }
+  .chips li.is-miss { opacity: 0.35; }
+  .chips li.has-proof { cursor: pointer; box-shadow: inset 0 0 0 1px var(--line-strong); color: var(--ink); }
+  .chips li.has-proof::after { content: " ●"; color: var(--accent); font-size: 0.6em; vertical-align: middle; }
+  .chips li.is-hit.has-proof::after { color: var(--accent-ink); }
+  #skill-status { min-height: 1.5em; margin-top: 14px; color: var(--muted); }
+  #skill-status a { color: var(--accent); text-decoration: underline; text-underline-offset: 3px; }
+  .proj.is-proof { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent); }
+  @media (min-width: 860px) { .skill-group { grid-template-columns: 240px 1fr; gap: 24px; } }
+
+  /* ---------- Contact ---------- */
+  .contact { border-top: 1px solid var(--line); }
+  .contact h2 { font-size: clamp(2.1rem, 6vw, 4.6rem); max-width: 16ch; }
+  .mail { margin-top: 28px; display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+  .mail-addr { display: inline-flex; align-items: center; min-height: 44px; font: 500 clamp(1rem, 2.4vw, 1.35rem) var(--mono); word-break: break-all; }
+  .mail-addr:hover { color: var(--accent); }
+  .socials { margin-top: 22px; display: flex; flex-wrap: wrap; gap: 4px 24px; }
+  .facts { margin-top: 22px; display: flex; flex-wrap: wrap; gap: 8px; }
+  .facts li { padding: 6px 12px; border: 1px solid var(--line); border-radius: 999px; color: var(--muted); font-size: 0.9rem; }
+  footer { padding: 40px 0; border-top: 1px solid var(--line); color: var(--muted); }
+  footer .close { font: 400 clamp(1.5rem, 4vw, 2.6rem)/1.15 var(--serif); font-style: italic; color: var(--ink); margin-bottom: 22px; }
+  footer .row { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; }
+
+  #toast { position: fixed; left: 50%; bottom: 24px; z-index: 80; transform: translate(-50%, 16px); opacity: 0; pointer-events: none; padding: 10px 16px; border-radius: 999px; background: var(--ink); color: var(--bg); font-size: 0.92rem; max-width: calc(100% - 32px); transition: opacity 0.25s ease, transform 0.35s var(--ease); }
+  #toast.is-on { opacity: 1; transform: translate(-50%, 0); }
+
+  /* ---------- Motion ---------- */
+  .js [data-reveal] { opacity: 0; transform: translateY(14px); transition: opacity 0.7s ease, transform 0.9s var(--ease); transition-delay: var(--d, 0s); }
+  .js [data-reveal].is-in { opacity: 1; transform: none; }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+    .js [data-reveal] { opacity: 1; transform: none; }
+  }
+  @media print {
+    :root, :root[data-theme="dark"], .stage, .run, .f1 { --bg: #fff; --surface: #fff; --surface-2: #f1f1f1; --ink: #000; --muted: #333; --line: #ccc; --line-strong: #999; --accent: #000; --ok: #000; --run: #000; background: #fff !important; color: #000 !important; }
+    .top, #rain, .term, .term-chips, #term-out, .portrait figcaption, .filter, #toast, dialog, .xp-plus, #strip, .lights, .run-bar button, .pill-btn { display: none !important; }
+    .stage::after { display: none; }
+    .stage-in { min-height: 0; }
+    section { padding: 18px 0; }
+    .js [data-reveal] { opacity: 1; transform: none; }
+    .statement span { opacity: 1 !important; }
+  }
+</style>
+  <script type="module" crossorigin src="/assets/main-Bk0gYUxl.js"></script>
+  <link rel="modulepreload" crossorigin href="/assets/modulepreload-polyfill-B5Qt9EMX.js">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="top">
+  <div class="shell top-in">
+    <a class="brand" href="#top" aria-label="Manas Jha, back to top"><i aria-hidden="true"></i>MJ</a>
+    <nav class="pipe" aria-label="Pipeline: sections of this page">
+      <a href="#build" data-stage="build"><i aria-hidden="true"></i><span class="lbl">build</span></a><span class="wire" aria-hidden="true"></span>
+      <a href="#break" data-stage="break"><i aria-hidden="true"></i><span class="lbl">break</span></a><span class="wire" aria-hidden="true"></span>
+      <a href="#measure" data-stage="measure"><i aria-hidden="true"></i><span class="lbl">measure</span></a><span class="wire" aria-hidden="true"></span>
+      <a href="#ship" data-stage="ship"><i aria-hidden="true"></i><span class="lbl">ship</span></a>
+    </nav>
+    <div class="tools-nav">
+      <a href="#tools">Tools</a>
+      <a href="#contact">Contact</a>
+      <button class="icon-btn js-grid js-only" id="theme" type="button" aria-label="Switch theme">
+        <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+        <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg>
+      </button>
+    </div>
+  </div>
+</header>
+
+<main id="main">
+  <!-- Stage: name, pitch, a command line, and a portrait made of code -->
+  <div class="stage" id="top">
+    <canvas id="rain" aria-hidden="true"></canvas>
+    <div class="shell stage-in">
+      <div>
+        <p class="status mono"><span class="dot" aria-hidden="true"></span><b>AI Engineer at DevHawk AI</b><span>Atlanta, GA <span id="clock"></span></span></p>
+        <h1 aria-label="Manas Jha"><span id="name" aria-hidden="true">Manas Jha</span></h1>
+        <p class="pitch">I build AI agents that <em>ship real software</em>, and the tests that prove they work.</p>
+        <p class="sub">Bachelors in Artificial Intelligence from Purdue (2026). 2+ years building cloud, data-heavy systems on Google Cloud. Founding a local-first operating system for AI agents on my own time.</p>
+
+        <form class="term js-flex js-only" id="term" autocomplete="off">
+          <label class="prompt mono" for="cmd">manas@site:~$</label>
+          <input id="cmd" type="text" spellcheck="false" autocapitalize="off" autocomplete="off" aria-describedby="term-out" placeholder="help">
+          <button type="submit">run</button>
+        </form>
+        <div class="term-chips js-flex js-only" aria-label="Example commands">
+          <button type="button" data-cmd="work">work</button>
+          <button type="button" data-cmd="skills rag">skills rag</button>
+          <button type="button" data-cmd="f1">f1</button>
+          <button type="button" data-cmd="email">email</button>
+          <button type="button" data-cmd="decode">decode</button>
+          <button type="button" data-cmd="help">help</button>
+        </div>
+        <p id="term-out" class="mono js-only" role="status" aria-live="polite">A working command line. Try one of these, or press / to focus it from anywhere.</p>
+        <div class="nojs-links">
+          <a class="btn btn-primary" href="#build">See the work</a>
+          <a class="btn" href="#contact">Get in touch</a>
+        </div>
+      </div>
+
+      <figure class="portrait" id="portrait">
+        <img src="/assets/manas-DEZ5wpLa.webp" alt="Portrait of Manas Jha" width="840" height="1050" decoding="async">
+        <canvas aria-hidden="true"></canvas>
+        <figcaption class="mono js-flex js-only"><span id="portrait-hint">// move over the code</span><button type="button" id="portrait-toggle" aria-pressed="false">show photo</button></figcaption>
+      </figure>
+    </div>
+  </div>
+
+  <div class="statement shell">
+    <p id="statement">I build AI systems, then I build the tests that prove whether they actually work.</p>
+  </div>
+
+  <!-- BUILD -->
+  <section id="build" aria-labelledby="build-h">
+    <div class="shell">
+      <div class="sec-head" data-reveal>
+        <p class="stage-tag mono"><b>BUILD</b> stage 1 of 4 · design the system</p>
+        <h2 id="build-h">Things I built, with the <em>numbers</em> they earned.</h2>
+        <p>Open any case file. The first one is live: it pulls this week's forecast straight from the simulator.</p>
+      </div>
+
+      <div class="work">
+        <article class="card proj f1" id="f1" data-name="Flat Out F1" data-reveal>
+          <div class="f1-col">
+            <p class="proj-tag mono"><i aria-hidden="true"></i>Race intelligence · personal project</p>
+            <h3>Flat Out F1</h3>
+            <p style="color:var(--muted)">A lap-by-lap F1 race simulator that runs every Grand Prix 4,000,000 times: tyre wear, pit strategy, safety cars, overtakes and reliability. Every prediction is scored against the result in a walk-forward backtest.</p>
+            <dl class="metrics">
+              <div><dd>4M</dd><dt>sims per race</dt></div>
+              <div><dd>60</dd><dt>Grands Prix audited</dt></div>
+              <div><dd>-12%</dd><dt>error vs grid baseline</dt></div>
+            </dl>
+            <div class="js-only">
+              <p class="mono" id="f1-event" style="color:var(--muted);margin-bottom:10px">Latest forecast loads when this card is on screen.</p>
+              <ol id="f1-odds" aria-label="Chance to win, top five"></ol>
+            </div>
+            <ul class="chips" data-stack aria-label="Built with"><li>Python</li><li>NumPy</li><li>LightGBM</li><li>FastF1</li><li>GSAP</li><li>Playwright</li></ul>
+            <details class="more">
+              <summary>Open case file</summary>
+              <div class="proj-full">
+                <ul class="bullets">
+                  <li>Pace model learns fuel- and tyre-corrected race pace from 60 audited Grands Prix (2024-2026), with calibrated uncertainty.</li>
+                  <li>Predicts tyre strategy and pit windows, plus car-adjusted driver and constructor ratings.</li>
+                  <li>Beats the "finish where you start" baseline by 12% on ranked probability score, retrained before every race.</li>
+                </ul>
+                <div class="proj-links">
+                  <a class="link" href="/f1/">Open f1.h</a>
+                  <a class="link" href="https://github.com/mjNotFound-19/Flat_Out_F1_V2" target="_blank" rel="noopener">Source on GitHub</a>
+                </div>
+              </div>
+            </details>
+          </div>
+          <div class="lights js-grid js-only" aria-label="Start-lights reaction test">
+            <div class="gantry" id="gantry" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></div>
+            <p id="lights-msg" class="mono" role="status" aria-live="polite">Five lights, then lights out. How quick are you off the line?</p>
+            <button type="button" id="lights-btn" data-phase="idle">Start the lights</button>
+            <a class="link" href="/f1/" style="justify-self:center">Skip the test, open f1.h</a>
+          </div>
+        </article>
+
+        <article class="card proj" style="--c:#00aeef" data-name="Local-first OS for AI agents" data-reveal>
+          <p class="proj-tag mono"><i aria-hidden="true"></i>Founder · in stealth</p>
+          <h3>A local-first OS for AI agents</h3>
+          <p>An operating system for AI agents that puts your own machine first. Agent workloads run on-device by default, and when local resources run short it bursts to rented cloud GPU compute.</p>
+          <ul class="chips" data-stack aria-label="Built with"><li>AI agents</li><li>Local-first</li><li>On-device compute</li><li>Cloud GPU bursting</li></ul>
+          <details class="more">
+            <summary>Open case file</summary>
+            <div class="proj-full">
+              <ul class="bullets">
+                <li>Local-first: agent workloads run on-device by default.</li>
+                <li>Bursts seamlessly to rented cloud GPU compute when local resources are constrained.</li>
+                <li>I own the system architecture and implementation.</li>
+              </ul>
+              <div class="proj-links"><a class="link" href="#contact">Ask about it</a></div>
+            </div>
+          </details>
+        </article>
+
+        <article class="card proj" style="--c:#34d399" data-name="Supply chain forecasting" data-reveal>
+          <p class="proj-tag mono"><i aria-hidden="true"></i>Production forecasting · Caterpillar</p>
+          <h3>Supply chain forecasting</h3>
+          <p>Temporal Fusion Transformer and TimesFM models forecasting supplier demand across 1,500+ suppliers, built under production schema and data-quality constraints.</p>
+          <dl class="metrics">
+            <div><dd>13.4%</dd><dt>WAPE on held-out data</dt></div>
+            <div><dd>1,500+</dd><dt>suppliers</dt></div>
+          </dl>
+          <ul class="chips" data-stack aria-label="Built with"><li>PyTorch Forecasting</li><li>Temporal Fusion Transformer</li><li>TimesFM</li><li>Python</li><li>pandas</li></ul>
+          <details class="more">
+            <summary>Open case file</summary>
+            <div class="proj-full">
+              <ul class="bullets">
+                <li>Owned the pipeline end to end: ingestion, feature construction, training, held-out validation and error analysis.</li>
+                <li>Integrated procurement and shipment data with strict no-future-leakage evaluation.</li>
+                <li>Reached 13.4% WAPE on held-out data.</li>
+              </ul>
+              <div class="proj-links"><a class="link" href="/assets/docs/supply_chain_poster.jpeg" target="_blank" rel="noopener">View research poster</a></div>
+            </div>
+          </details>
+        </article>
+
+        <article class="card proj" style="--c:#a78bfa" data-name="Network security analytics" data-reveal>
+          <p class="proj-tag mono"><i aria-hidden="true"></i>Network analytics · Caterpillar</p>
+          <h3>Network security analytics</h3>
+          <p>A high-throughput network traffic analysis platform with ML-based flow classification, supporting WAN capacity planning and anomaly detection for Caterpillar's IT org.</p>
+          <dl class="metrics"><div><dd>15M+</dd><dt>flow records per minute</dt></div></dl>
+          <ul class="chips" data-stack aria-label="Built with"><li>Cloud Datastore</li><li>Python</li><li>Grafana</li><li>LDAP</li></ul>
+          <details class="more">
+            <summary>Open case file</summary>
+            <div class="proj-full">
+              <ul class="bullets">
+                <li>Built on Google Cloud Datastore with ML-based flow classification.</li>
+                <li>Grafana dashboards monitoring 15M+ network flow records per minute in real time.</li>
+                <li>LDAP-based authentication for role-aware access to analytics and WAN planning tools.</li>
+              </ul>
+              <div class="proj-links"><a class="link" href="/assets/docs/Caterpillar_poster1.pdf" target="_blank" rel="noopener">View research poster (PDF)</a></div>
+            </div>
+          </details>
+        </article>
+
+        <article class="card proj" style="--c:#f43f5e" data-name="Automotive intrusion detection" data-reveal>
+          <p class="proj-tag mono"><i aria-hidden="true"></i>Security + embedded ML · Avolta</p>
+          <h3>Automotive intrusion detection</h3>
+          <p>Python software, ML models and intrusion detection systems running on Raspberry Pi hardware for automotive security.</p>
+          <ul class="chips" data-stack aria-label="Built with"><li>Python</li><li>IDS</li><li>SIEM</li><li>Raspberry Pi</li><li>Linux</li></ul>
+          <details class="more">
+            <summary>Open case file</summary>
+            <div class="proj-full">
+              <ul class="bullets">
+                <li>IDS with SIEM tooling for security event triage.</li>
+                <li>Lightweight models deployed on Raspbian for on-device inference.</li>
+              </ul>
+              <div class="proj-links"><a class="link" href="#contact">Discuss security work</a></div>
+            </div>
+          </details>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- BREAK -->
+  <section id="break" aria-labelledby="break-h">
+    <div class="shell">
+      <div class="sec-head" data-reveal>
+        <p class="stage-tag mono"><b>BREAK</b> stage 2 of 4 · attack it before anyone else does</p>
+        <h2 id="break-h">Then I try to <em>break</em> what I built.</h2>
+      </div>
+      <div class="three">
+        <div class="card" data-reveal>
+          <span class="mono">benchmarks</span>
+          <h3>Tests for frontier models</h3>
+          <p>At Handshake I wrote software-engineering benchmark problems, reference solutions and automated judge tests that measure how well frontier models code, and scored model output for correctness, instruction-following, factuality and safety.</p>
+        </div>
+        <div class="card" data-reveal style="--d:.08s">
+          <span class="mono">no future leakage</span>
+          <h3>Forecasts that can't cheat</h3>
+          <p>Supplier forecasts were evaluated on held-out data with strict no-future-leakage rules. The F1 simulator is scored against every real result in a walk-forward backtest, retrained before each race.</p>
+        </div>
+        <div class="card" data-reveal style="--d:.16s">
+          <span class="mono">attack surface</span>
+          <h3>Security from the inside</h3>
+          <p>Intrusion detection with SIEM tooling on embedded hardware at Avolta, anomaly detection on Caterpillar's network traffic, and the Google Cybersecurity Professional Certificate.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- MEASURE -->
+  <section id="measure" aria-labelledby="measure-h">
+    <div class="shell">
+      <div class="sec-head" data-reveal>
+        <p class="stage-tag mono"><b>MEASURE</b> stage 3 of 4 · benchmark it against reality</p>
+        <h2 id="measure-h">The results, as a <em>test run</em>.</h2>
+      </div>
+      <div class="card run" data-reveal>
+        <div class="run-bar"><span>$ pytest career/ -v</span><button type="button" id="tests-rerun" class="js-only">run again</button></div>
+        <ol class="tests" id="tests">
+          <li><span class="t-state" aria-hidden="true">✓</span><code>test_supplier_forecast_wape</code><b class="t-val">13.4%</b><span class="t-note">TFT + TimesFM across 1,500+ suppliers, held-out data</span></li>
+          <li><span class="t-state" aria-hidden="true">✓</span><code>test_network_flows_monitored</code><b class="t-val">15M+/min</b><span class="t-note">Grafana + Cloud Datastore, in real time</span></li>
+          <li><span class="t-state" aria-hidden="true">✓</span><code>test_race_sims_per_grand_prix</code><b class="t-val">4,000,000</b><span class="t-note">Flat Out F1 Monte Carlo, live on f1.h</span></li>
+          <li><span class="t-state" aria-hidden="true">✓</span><code>test_error_vs_grid_baseline</code><b class="t-val">-12%</b><span class="t-note">ranked probability score, walk-forward backtest</span></li>
+          <li><span class="t-state" aria-hidden="true">✓</span><code>test_research_team_selection</code><b class="t-val">&lt;10 of 100+</b><span class="t-note">applicants selected for the Purdue CS research team</span></li>
+          <li><span class="t-state" aria-hidden="true">✓</span><code>test_years_on_google_cloud</code><b class="t-val">2+</b><span class="t-note">cloud, data-intensive systems</span></li>
+        </ol>
+        <p id="tests-sum" role="status" aria-live="polite">6 passed, 0 failed</p>
+      </div>
+      <p class="quote" data-reveal>I define how success gets measured early, then let those numbers drive the work.</p>
+    </div>
+  </section>
+
+  <!-- SHIP -->
+  <section id="ship" aria-labelledby="ship-h">
+    <div class="shell">
+      <div class="sec-head" data-reveal>
+        <p class="stage-tag mono"><b>SHIP</b> stage 4 of 4 · put it in front of people</p>
+        <div class="sec-row">
+          <h2 id="ship-h">Where it shipped: eight roles, often <em>two at once</em>.</h2>
+          <button class="pill-btn js-only" id="xp-all" type="button" aria-pressed="false">Expand all</button>
+        </div>
+      </div>
+
+      <div id="strip" class="js-only" data-reveal>
+        <p id="strip-label" class="mono">Each bar is a role. Overlapping bars ran at the same time.</p>
+        <div class="lane-wrap"></div>
+      </div>
+
+      <div class="xp-list" data-reveal>
+        <details class="xp" open id="xp-devhawk" data-from="2026-10" data-to="">
+          <summary><span class="xp-when mono">Oct 2026 - Present</span><span class="xp-role">AI Engineer <span class="live">Current</span><span class="xp-org">DevHawk AI</span></span><span class="xp-badge"><b>AI agents</b> for software delivery</span><span class="xp-plus" aria-hidden="true">+</span></summary>
+          <ul class="bullets"><li>Build AI agents and LLM-powered tooling that take software work from idea to shipped code.</li></ul>
+        </details>
+        <details class="xp" open id="xp-stealth" data-from="2026-08" data-to="">
+          <summary><span class="xp-when mono">Aug 2026 - Present</span><span class="xp-role">Founder <span class="live">Current</span><span class="xp-org">Stealth startup · United States</span></span><span class="xp-badge"><b>Agent OS</b> local-first, cloud GPU burst</span><span class="xp-plus" aria-hidden="true">+</span></summary>
+          <ul class="bullets">
+            <li>Building a local-first operating system for AI agents that runs agent workloads on-device by default and bursts to rented cloud GPU compute when local resources are constrained.</li>
+            <li>Own the system architecture and implementation.</li>
+          </ul>
+        </details>
+        <details class="xp" id="xp-handshake" data-from="2026-05" data-to="2026-10">
+          <summary><span class="xp-when mono">May 2026 - Oct 2026</span><span class="xp-role">AI &amp; Machine Learning Researcher (Contract)<span class="xp-org">Handshake · Remote</span></span><span class="xp-badge"><b>Frontier</b> model coding benchmarks</span><span class="xp-plus" aria-hidden="true">+</span></summary>
+          <ul class="bullets">
+            <li>Authored advanced software-engineering benchmark problems, reference solutions and automated judge test cases used to measure the coding capability of frontier models for leading AI labs.</li>
+            <li>Evaluated frontier LLM and multimodal model outputs against structured rubrics covering correctness, instruction-following, factuality and safety, and wrote evaluations used in downstream model assessment.</li>
+          </ul>
+        </details>
+        <details class="xp" id="xp-purdue" data-from="2026-05" data-to="2026-08">
+          <summary><span class="xp-when mono">May 2026 - Aug 2026</span><span class="xp-role">AI Researcher<span class="xp-org">Purdue University CS Dept. · West Lafayette, IN</span></span><span class="xp-badge"><b>&lt;10 of 100+</b> selected for the research team</span><span class="xp-plus" aria-hidden="true">+</span></summary>
+          <ul class="bullets">
+            <li>Selected as one of fewer than 10 students from 100+ applicants for an interdisciplinary research team advised by Dr. Qinglan Ding and Dr. Tianyi Zhang.</li>
+            <li>Designed and implemented the LLM orchestration layer of a personalized health chatbot for adults managing cardiovascular and metabolic risk: component interfaces, control flow and multi-step conversational workflows.</li>
+            <li>Architected a RAG pipeline with persona-aware context assembly that produces grounded, citation-traceable responses, and defined metrics for retrieval accuracy, grounding and unsupported-claim rate.</li>
+          </ul>
+        </details>
+        <details class="xp" id="xp-cat-supply" data-from="2025-08" data-to="2026-05">
+          <summary><span class="xp-when mono">Aug 2025 - May 2026</span><span class="xp-role">Data Science Researcher, Supply Chain Forecasting<span class="xp-org">Caterpillar Inc. (The Data Mine) · West Lafayette, IN</span></span><span class="xp-badge"><b>13.4% WAPE</b> across 1,500+ suppliers</span><span class="xp-plus" aria-hidden="true">+</span></summary>
+          <ul class="bullets">
+            <li>Developed and fine-tuned Temporal Fusion Transformer and TimesFM models forecasting demand across 1,500+ suppliers, reaching 13.4% WAPE on held-out data.</li>
+            <li>Owned the end-to-end pipeline (ingestion, feature construction, training, held-out validation, error analysis), integrating procurement and shipment data under production schema and data-quality constraints.</li>
+          </ul>
+        </details>
+        <details class="xp" id="xp-cat-network" data-from="2025-01" data-to="2025-05">
+          <summary><span class="xp-when mono">Jan 2025 - May 2025</span><span class="xp-role">Data Science Researcher, Network Security Analytics<span class="xp-org">Caterpillar Inc. (The Data Mine) · West Lafayette, IN</span></span><span class="xp-badge"><b>15M+/min</b> network flows monitored</span><span class="xp-plus" aria-hidden="true">+</span></summary>
+          <ul class="bullets">
+            <li>Engineered a high-throughput network traffic analysis platform on Google Cloud Datastore with ML-based flow classification, supporting WAN capacity planning and anomaly detection.</li>
+            <li>Designed and deployed Grafana dashboards monitoring 15M+ network flow records per minute in real time, improving incident response.</li>
+            <li>Implemented LDAP-based authentication for secure, role-aware access to internal network analytics and WAN planning tools.</li>
+          </ul>
+        </details>
+        <details class="xp" id="xp-basf" data-from="2024-08" data-to="2024-12">
+          <summary><span class="xp-when mono">Aug 2024 - Dec 2024</span><span class="xp-role">Data Science Researcher, Agricultural Forecasting<span class="xp-org">BASF (The Data Mine) · West Lafayette, IN</span></span><span class="xp-badge"><b>3 states</b> corn + soybean forecasts</span><span class="xp-plus" aria-hidden="true">+</span></summary>
+          <ul class="bullets">
+            <li>Built geospatial ML models to predict corn and soybean production across Indiana, Iowa and Illinois.</li>
+            <li>Built scalable ETL pipelines integrating multi-source agricultural and remote-sensing data.</li>
+          </ul>
+        </details>
+        <details class="xp" id="xp-avolta" data-from="2023-12" data-to="2024-06">
+          <summary><span class="xp-when mono">Dec 2023 - Jun 2024</span><span class="xp-role">Machine Learning Intern<span class="xp-org">Avolta, Inc. · Remote</span></span><span class="xp-badge"><b>IDS + SIEM</b> automotive intrusion detection</span><span class="xp-plus" aria-hidden="true">+</span></summary>
+          <ul class="bullets"><li>Built Python software, ML models and intrusion detection systems (IDS) with SIEM tooling on Raspberry Pi / Raspbian hardware for automotive security.</li></ul>
+        </details>
+      </div>
+
+      <div class="two">
+        <div class="card" data-reveal>
+          <h3>Education and certificates</h3>
+          <ul class="rows">
+            <li><div><b>Bachelors in Artificial Intelligence</b><span>Purdue University · 2026</span></div></li>
+            <li><div><b>Google AI Professional Certificate</b><span>Google Career Certificates · May 2026</span></div><a class="link" href="https://www.credly.com/badges/0ddf776f-59be-443a-ba4d-828372c0386f/linked_in_profile" target="_blank" rel="noopener" aria-label="Verify the Google AI Professional Certificate">Verify</a></li>
+            <li><div><b>Google Cybersecurity Professional Certificate</b><span>Google Career Certificates · June 2023</span></div><a class="link" href="https://www.credly.com/badges/f4aed5da-536f-4f3d-9f4c-dd80c17dd9e6/linked_in_profile" target="_blank" rel="noopener" aria-label="Verify the Google Cybersecurity Professional Certificate">Verify</a></li>
+            <li><div><b>AI Agent Fundamentals</b><span>Certificate</span></div></li>
+            <li><div><b>AI Fundamentals</b><span>Certificate</span></div></li>
+          </ul>
+        </div>
+        <div class="card" data-reveal style="--d:.08s">
+          <h3>Still in the queue: the bucket list</h3>
+          <p class="muted">Four things I plan to have done, each of which scares me a little.</p>
+          <ol class="goals">
+            <li>Stand on the three highest points on Earth.</li>
+            <li>Race a GT3 car around the Nürburgring Nordschleife.</li>
+            <li>Swim, bike and run 226 km in a single day.</li>
+            <li>Write, play, produce, mix and master a whole album.</li>
+          </ol>
+          <a class="link" href="/bucket-list/">See the bucket list</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TOOLS -->
+  <section id="tools" aria-labelledby="tools-h">
+    <div class="shell">
+      <div class="sec-head" data-reveal>
+        <p class="stage-tag mono"><b>TOOLS</b> what I reach for</p>
+        <div class="sec-row">
+          <h2 id="tools-h">Skills, with <em>proof</em> attached.</h2>
+          <label class="filter js-block js-only">
+            <span class="sr-only">Filter skills</span>
+            <input id="skill-filter" type="search" placeholder="Try PyTorch, RAG, GCP…" autocomplete="off" aria-describedby="skill-status">
+          </label>
+        </div>
+        <p class="js-only">Skills with a dot were used in a project above. Tap one to see where.</p>
+      </div>
+      <div class="skill-groups" data-reveal>
+        <div class="skill-group"><h3>AI coding &amp; evaluation</h3><ul class="chips"><li>AI coding agents</li><li>Frontier-model benchmarks</li><li>Automated judge tests</li><li>Adversarial test design</li><li>Rubric-based evaluation</li><li>LLM orchestration</li><li>RAG</li></ul></div>
+        <div class="skill-group"><h3>AI agents &amp; automation</h3><ul class="chips"><li>Multi-agent design with Claude</li><li>Scheduled autonomous workflows</li><li>Human-in-the-loop approval gates</li><li>Agent guardrails (test gates, run locking)</li><li>Official-source verification</li><li>Prompt &amp; tool design</li><li>Agent connectors (email, phone alerts)</li><li>Monitoring &amp; observability</li><li>Alerting with acknowledgement</li></ul></div>
+        <div class="skill-group"><h3>Languages &amp; cloud</h3><ul class="chips"><li>Python</li><li>JavaScript / TypeScript</li><li>SQL</li><li>C</li><li>Bash</li><li>Node.js</li><li>Google Cloud Platform</li><li>Cloud Datastore</li><li>LDAP</li><li>Grafana</li><li>Linux</li><li>Git</li></ul></div>
+        <div class="skill-group"><h3>ML &amp; statistics</h3><ul class="chips"><li>PyTorch</li><li>TensorFlow / Keras</li><li>scikit-learn</li><li>XGBoost</li><li>LightGBM</li><li>Ridge regression</li><li>Monte Carlo simulation</li><li>Probabilistic forecasting &amp; calibration</li><li>RPS, log loss, Brier score</li><li>Walk-forward backtesting</li><li>Leakage testing</li><li>Bootstrap confidence intervals</li><li>Multiple-comparison correction</li><li>Champion/challenger experiments</li><li>Radar nowcasting (optical flow)</li><li>IDS</li><li>SIEM</li><li>Network traffic analysis</li></ul></div>
+        <div class="skill-group"><h3>Data engineering</h3><ul class="chips"><li>pandas</li><li>NumPy</li><li>SciPy</li><li>ETL pipelines</li><li>API data pipelines (FastF1, Open-Meteo, RainViewer, OpenStreetMap)</li><li>Parquet</li><li>Immutable versioned outputs</li><li>Schema &amp; contract validation</li><li>Web scraping with cross-source validation</li><li>Multiprocessing</li></ul></div>
+        <div class="skill-group"><h3>Frontend, UI/UX &amp; motion</h3><ul class="chips"><li>React</li><li>Vite</li><li>Tailwind CSS</li><li>Vanilla JavaScript (ES modules)</li><li>Framer Motion</li><li>GSAP (ScrollTrigger)</li><li>Lenis smooth scroll</li><li>Three.js</li><li>WebGL / GLSL shaders</li><li>Canvas 2D</li><li>SVG animation &amp; data viz</li><li>Interactive maps</li><li>3D asset pipeline (Blender scripting, glTF)</li><li>Web Audio API</li><li>Responsive design</li><li>Accessibility &amp; reduced motion</li><li>Design systems</li><li>Web performance</li></ul></div>
+        <div class="skill-group"><h3>Software engineering</h3><ul class="chips"><li>Automated testing (unit, contract, reproducibility)</li><li>Playwright browser automation</li><li>FFmpeg</li><li>Command-line tooling</li><li>GitHub Pages deployment</li><li>Technical writing (experiment logs, runbooks)</li></ul></div>
+      </div>
+      <p id="skill-status" class="mono" role="status" aria-live="polite"></p>
+    </div>
+  </section>
+
+  <!-- CONTACT -->
+  <section id="contact" class="contact" aria-labelledby="ct-h">
+    <div class="shell" data-reveal>
+      <p class="stage-tag mono"><b>NEXT</b> your move</p>
+      <h2 id="ct-h" style="margin-top:14px">Building something with <em>AI agents</em>? I'd like to hear about it.</h2>
+      <p class="muted" style="margin-top:18px;max-width:52ch">Reach out about software engineering roles, AI coding-agent tooling, model evaluation, or what I'm building in stealth.</p>
+      <div class="mail">
+        <a class="mail-addr" href="mailto:manasjha.015@gmail.com">manasjha.015@gmail.com</a>
+        <button class="btn btn-primary js-flex js-only" type="button" data-copy-email>Copy email</button>
+        <a class="btn" href="mailto:manasjha.015@gmail.com">Open in mail app</a>
+      </div>
+      <div class="socials">
+        <a class="link" href="https://github.com/mjNotFound-19" target="_blank" rel="noopener">GitHub</a>
+        <a class="link" href="https://linkedin.com/in/mjNotFound19" target="_blank" rel="noopener">LinkedIn</a>
+      </div>
+      <ul class="facts" aria-label="Quick facts"><li>Atlanta, GA</li><li>US citizen</li><li>Open to hybrid on-site</li></ul>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="shell">
+    <p class="close">Shipping isn't the finish line. Measuring it is.</p>
+    <div class="row mono"><span>© <span id="year">2026</span> Manas Jha</span><span>No frameworks on this page, no trackers.</span></div>
+  </div>
+</footer>
+
+<dialog id="sheet" aria-labelledby="sheet-title">
+  <div class="sheet-panel">
+    <button type="button" class="icon-btn" id="sheet-close" aria-label="Close case file">✕</button>
+    <div id="sheet-body" style="display:contents"></div>
+  </div>
+</dialog>
+<div id="toast" role="status" aria-live="polite"></div>
+
+</body>
 </html>
