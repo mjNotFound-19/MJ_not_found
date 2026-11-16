@@ -1,0 +1,9 @@
+DUM-E desk demo
+Copyright (c) 2026 Manas Jha. All rights reserved.
+
+No licence is granted. You may view this page in a web browser. You may not copy, reproduce,
+redistribute, modify, adapt, translate, decompile, disassemble, reverse engineer, or create works
+derived from DUM-E, this page, its code, data, design or video, in whole or in part, without the
+prior written and signed permission of Manas Jha.
+
+Requests: see https://manasjha.online/#contact

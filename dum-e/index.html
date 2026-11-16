@@ -1,0 +1,382 @@
+<!doctype html>
+<!-- DUM-E desk, the public demo, drawn from a frozen snapshot. Copyright Manas Jha, all rights reserved: no copying,
+     reuse, adaptation or reverse engineering without his written, signed permission. Black and white, plus one blue (#3cc4ff, the
+     site's accent) used only for work happening now. -->
+<html lang="en">
+<head>
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self'; media-src 'self'; worker-src 'none'; object-src 'none'; frame-src 'none'; base-uri 'self'; form-action 'none'; upgrade-insecure-requests">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DUM-E desk - Manas Jha</title>
+<meta name="description" content="DUM-E is Manas Jha's Claude Code agent harness: six agent sessions take a card from a frozen spec through a capped build-and-repair loop to an independent verifier. Look around its desk and replay a real card.">
+<meta property="og:title" content="DUM-E desk - Manas Jha">
+<meta property="og:description" content="Six Claude Code agents, one harness. Replay a real card through the pipeline.">
+<meta property="og:url" content="https://manasjha.online/dum-e/">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#000000">
+<meta name="copyright" content="© 2026 Manas Jha. All rights reserved.">
+<meta name="robots" content="noarchive">
+<link rel="license" href="/dum-e/NOTICE.txt">
+<link rel="icon" type="image/svg+xml" href="/icons/dume.svg">
+<!-- Two pixel faces: Pixelify Sans for reading, Silkscreen for titles and stage names. The page works in the
+     fallback fonts if Google Fonts doesn't load. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;500;600&family=Silkscreen&display=swap">
+<style>
+:root {
+  --black: #000;
+  --white: #fff;
+  /* Greys don't exist on a 1-bit screen: secondary text is black at lower strength, and tints are dither patterns. */
+  --ink: #000;
+  --ink-2: rgba(0, 0, 0, .72);
+  --ink-3: rgba(0, 0, 0, .6);
+  --dither-25: radial-gradient(rgba(0, 0, 0, .55) .5px, transparent .7px) 0 0 / 4px 4px;
+  --dither-50: repeating-conic-gradient(var(--black) 0 25%, var(--white) 0 50%) 0 0 / 2px 2px;
+  /* The one colour: highlights only (work happening now, a handoff moving, the live stage). */
+  --blue: #3cc4ff;
+  --blue-ink: #04121b;
+  --ui: "Pixelify Sans", Tahoma, Verdana, system-ui, sans-serif;
+  --display: "Silkscreen", "Pixelify Sans", Tahoma, sans-serif;
+  --mono: "Pixelify Sans", Consolas, "Courier New", monospace;
+  --ease: cubic-bezier(.22, 1, .36, 1); /* the same curve as manasjha.online */
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body {
+  background: var(--black) radial-gradient(rgba(255, 255, 255, .16) 1px, transparent 1px) 0 0 / 12px 12px;
+  color: var(--ink);
+  font: 13px/16px var(--ui);
+  overflow: hidden;
+}
+/* Silkscreen is all-caps by design; it is used only for short names, never for sentences. */
+.menubar .brand, .titlebar .title, .stage-head .name, .bootlog, h3, .about h2, .tree .node text:not(.sub) {
+  font-family: var(--display); font-weight: 400; letter-spacing: 0;
+}
+.titlebar .title, .stage-head .name, h3 { font-size: 11px; }
+body.has-field { background-image: none; }
+#field { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+button, select, option, input, textarea, table, pre, code { font: inherit; color: inherit; }
+svg text { font-family: var(--ui); }
+.num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+a { color: inherit; }
+
+/* Menu bar */
+.menubar {
+  position: fixed; inset: 0 0 auto 0; height: 24px; z-index: 1000;
+  display: flex; align-items: center; gap: 16px; padding: 0 12px;
+  background: var(--white); border-bottom: 1px solid var(--black);
+}
+.menubar .brand { display: flex; align-items: center; gap: 8px; }
+.mark { width: 12px; height: 12px; border: 1px solid var(--black); background:
+  linear-gradient(var(--black), var(--black)) 2px 2px / 3px 3px no-repeat,
+  linear-gradient(var(--blue), var(--blue)) 7px 7px / 3px 3px no-repeat; }
+.menubar .spacer { flex: 1; }
+.menubar .item { display: flex; align-items: center; gap: 6px; color: var(--ink-2); }
+.lamp { width: 8px; height: 8px; border: 1px solid var(--black); background: var(--white); }
+.lamp.ok { background: var(--black); }
+.menubar .menu { background: none; border: 0; padding: 2px 6px; cursor: default; text-decoration: none; }
+.menubar a.menu { cursor: pointer; }
+.menubar .menu:hover, .menubar .menu:focus-visible { background: var(--black); color: var(--white); outline: none; }
+
+/* Desktop icons */
+.icons { position: fixed; top: 40px; right: 16px; display: grid; gap: 12px; z-index: 1; }
+.icon {
+  width: 76px; display: grid; justify-items: center; gap: 4px; padding: 4px 0;
+  background: none; border: 0; color: var(--white); cursor: default; text-align: center;
+}
+.icon .glyph { width: 36px; height: 32px; background: var(--white); border: 1px solid var(--white); position: relative; transition: transform 160ms var(--ease); }
+.icon:hover .glyph { transform: translateY(-2px); }
+.icon .glyph::after { content: ""; position: absolute; inset: 6px 6px 8px; border: 1px solid var(--black); }
+.icon[data-win="sessions"] .glyph::after { inset: 6px 13px 14px; box-shadow: -8px 12px 0 -1px var(--white), -8px 12px 0 0 var(--black), 8px 12px 0 -1px var(--white), 8px 12px 0 0 var(--black); }
+.icon[data-win="ledger"] .glyph::after { border-width: 1px 0; inset: 7px 6px; box-shadow: 0 5px 0 var(--black) inset; }
+.icon[data-win="about"] .glyph::after { inset: 7px 9px; border-width: 1px 0; box-shadow: 0 4px 0 -3px var(--black) inset, 0 -4px 0 -3px var(--black) inset; }
+.icon .label { padding: 0 4px; line-height: 14px; }
+.icon:focus-visible { outline: none; }
+.icon:focus-visible .label, .icon.picked .label { background: var(--white); color: var(--black); }
+.icon.open .glyph { background: var(--dither-25), var(--white); }
+
+/* Windows: white panes with a hard black edge and a hard offset shadow, the 1-bit way. */
+.desk { position: fixed; inset: 24px 0 0 0; overflow: auto; z-index: 2; pointer-events: none; }
+.desk .win { pointer-events: auto; }
+.win {
+  position: absolute; top: 0; left: 0; display: flex; flex-direction: column; min-width: 280px;
+  background: var(--white); border: 1px solid var(--black); outline: 1px solid var(--white);
+  box-shadow: 4px 4px 0 0 rgba(255, 255, 255, .22);
+}
+.win[hidden] { display: none; }
+.titlebar {
+  height: 20px; flex: none; display: flex; align-items: center; gap: 8px; padding: 0 4px;
+  border-bottom: 1px solid var(--black); cursor: grab; -webkit-user-select: none; -moz-user-select: none; user-select: none; touch-action: none;
+}
+.titlebar:active { cursor: grabbing; }
+.win.focused .titlebar { background: repeating-linear-gradient(var(--white) 0 1px, var(--black) 1px 2px) 0 4px / 100% 11px no-repeat; }
+.titlebar .title { margin: 0 auto; padding: 0 8px; background: var(--white); white-space: nowrap; }
+.win:not(.focused) .titlebar .title { color: var(--ink-3); }
+.titlebar .close { width: 12px; height: 12px; padding: 0; background: var(--white); border: 1px solid var(--black); position: relative; z-index: 1; }
+.titlebar .close:hover { background: var(--dither-50); }
+.titlebar .close:active { background: var(--black); }
+.titlebar .close:focus-visible { outline: 1px dotted var(--black); outline-offset: 2px; }
+.titlebar .grip { width: 12px; }
+.toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 8px; border-bottom: 1px solid var(--black); }
+.toolbar .hint { color: var(--ink-3); margin-left: auto; }
+.body { flex: 1; overflow: auto; padding: 12px; }
+.status { min-height: 20px; flex: none; display: flex; align-items: center; gap: 12px; padding: 0 8px; border-top: 1px solid var(--black); color: var(--ink-2); }
+.status .right { margin-left: auto; }
+.btn {
+  height: 24px; padding: 0 12px; background: var(--white); border: 1px solid var(--black); border-radius: 4px;
+  box-shadow: 2px 2px 0 var(--black); cursor: default;
+  transition: transform 120ms var(--ease), box-shadow 120ms var(--ease), background-color 120ms var(--ease), color 120ms var(--ease);
+}
+.btn:hover { background: var(--black); color: var(--white); }
+.btn:active, .btn[aria-pressed="true"] { transform: translate(2px, 2px); box-shadow: 0 0 0 var(--black); }
+.btn[aria-pressed="true"] { background: var(--black); color: var(--white); }
+.btn:focus-visible { outline: 1px dotted var(--black); outline-offset: 3px; }
+select.btn { padding: 0 8px; }
+select.btn:hover { background: var(--white); color: var(--black); }
+.btn.go { background: var(--blue); color: var(--blue-ink); }
+.btn.go:hover { background: var(--black); color: var(--white); }
+.well { background: var(--white); border: 1px solid var(--black); }
+
+@keyframes ants-css { to { background-position: 8px 0, -8px 100%, 0 -8px, 100% 8px; } }
+@keyframes ants { to { stroke-dashoffset: -8; } }
+@keyframes flow { to { background-position: 12px 0; } }
+
+/* Pipeline */
+.pipe { display: grid; grid-template-columns: repeat(6, minmax(92px, 1fr)) minmax(104px, 1fr); gap: 0 20px; padding: 4px 4px 0; }
+.stage { position: relative; display: flex; flex-direction: column; min-height: 168px; }
+.stage + .stage::before { content: ""; position: absolute; left: -20px; top: 15px; width: 20px; height: 1px; background: var(--black); }
+.stage + .stage::after { content: ""; position: absolute; left: -6px; top: 12px; border: 4px solid transparent; border-left: 5px solid var(--black); }
+.stage.live::before { height: 2px; top: 14px; background: linear-gradient(90deg, var(--blue) 50%, transparent 0) 0 0 / 6px 2px repeat-x; animation: flow .5s linear infinite; }
+.stage.live::after { border-left-color: var(--blue); }
+.stage-head { height: 32px; display: grid; align-content: center; padding: 0 8px; background: var(--white); border: 1px solid var(--black); transition: background-color 220ms var(--ease); }
+.stage-head .who { color: var(--ink-3); font-size: 11px; line-height: 12px; }
+.stage.live .stage-head { background: var(--blue); color: var(--blue-ink); }
+.stage.live .stage-head .who { color: var(--blue-ink); }
+.tray { flex: 1; display: flex; flex-direction: column; gap: 8px; padding: 8px; margin-top: -1px; min-height: 120px; background: var(--dither-25), var(--white); }
+.ends { display: grid; gap: 12px; grid-template-rows: auto auto; }
+.ends .stage { min-height: 0; }
+.ends .tray { min-height: 80px; }
+.ends .stage + .stage::before, .ends .stage + .stage::after { display: none; }
+.loop { grid-column: 2 / 6; position: relative; height: 32px; margin-top: 4px; border: 1px dashed var(--black); border-top: 0; }
+.loop::before { content: ""; position: absolute; left: -5px; top: -6px; border: 4px solid transparent; border-bottom: 5px solid var(--black); }
+.loop span { position: absolute; left: 50%; bottom: -8px; transform: translateX(-50%); background: var(--white); padding: 0 8px; color: var(--ink-2); white-space: nowrap; }
+.chip {
+  position: relative; display: grid; gap: 4px; padding: 6px 8px; background: var(--white);
+  border: 1px solid var(--black); border-radius: 4px; box-shadow: 2px 2px 0 var(--black);
+  cursor: default; text-align: left; will-change: transform;
+  transition: box-shadow 160ms var(--ease), translate 160ms var(--ease);
+}
+.chip:hover { translate: -1px -1px; box-shadow: 3px 3px 0 var(--black); }
+.chip:focus-visible { outline: 1px dotted var(--black); outline-offset: 3px; }
+.chip .id { font-family: var(--mono); font-weight: 600; }
+.chip .meta { color: var(--ink-3); font-size: 11px; line-height: 12px; }
+.chip.sel { background: var(--black); color: var(--white); }
+.chip.sel .meta { color: rgba(255, 255, 255, .72); }
+.chip.sel .pip { border-color: var(--white); }
+.chip.sel .pip.pass { background: var(--white); }
+.chip.moving::before { content: ""; position: absolute; inset: -4px; pointer-events: none; background:
+    linear-gradient(90deg, var(--blue) 50%, transparent 0) 0 0 / 8px 2px repeat-x,
+    linear-gradient(90deg, var(--blue) 50%, transparent 0) 0 100% / 8px 2px repeat-x,
+    linear-gradient(0deg, var(--blue) 50%, transparent 0) 0 0 / 2px 8px repeat-y,
+    linear-gradient(0deg, var(--blue) 50%, transparent 0) 100% 0 / 2px 8px repeat-y;
+  animation: ants-css .6s linear infinite; }
+/* Try boxes: solid = passed, checked pattern = failed, blue = running now, empty = not used. */
+.pips { display: flex; gap: 2px; }
+.pip { width: 6px; height: 6px; border: 1px solid var(--black); }
+.pip.pass { background: var(--black); }
+.pip.fail { background: var(--dither-50); }
+.pip.run { background: var(--blue); }
+.flash { position: absolute; right: 6px; top: 6px; font-family: var(--mono); font-size: 11px; line-height: 12px; padding: 0 4px; border: 1px solid var(--black); background: var(--white); color: var(--black); }
+.flash.fail { background: var(--black); color: var(--white); }
+.chip.sel .flash { border-color: var(--white); }
+.empty { color: var(--ink-3); padding: 8px 0; margin: 0; }
+
+/* Session tree */
+.tree svg { display: block; width: 100%; height: auto; overflow: visible; }
+.tree .edge { stroke: var(--black); stroke-width: 1; }
+.tree .edge.hot { stroke: var(--blue); stroke-width: 2; stroke-dasharray: 4 3; animation: ants .4s linear infinite; }
+.tree .node rect.box { fill: var(--white); stroke: var(--black); transition: fill 220ms var(--ease); }
+.tree .node rect.shadow { fill: var(--black); }
+.tree .node text { font: 10px var(--display); fill: var(--black); }
+.tree .node text.sub { font: 11px var(--ui); fill: var(--black); fill-opacity: .6; }
+.tree .node .ring { fill: none; stroke: var(--blue); stroke-width: 1.5; stroke-dasharray: 4 4; visibility: hidden; animation: ants .6s linear infinite; }
+.tree .node.active .ring { visibility: visible; }
+.tree .node.ping rect.box { fill: var(--blue); }
+.tree .packet { fill: var(--blue); stroke: var(--black); }
+.tree .packet.trail { stroke: none; }
+.tree .ripple { fill: none; stroke: var(--blue); stroke-width: 1.5; transform-box: fill-box; transform-origin: center; }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 16px; color: var(--ink-2); margin-top: 8px; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend i { width: 12px; height: 8px; display: inline-block; }
+.legend .k-move { background: var(--blue); border: 1px solid var(--black); }
+.legend .k-work { border: 1px dashed var(--blue); }
+
+/* Tables */
+table { width: 100%; border-collapse: collapse; }
+th { text-align: left; font-weight: 400; color: var(--ink-3); padding: 4px 8px; border-bottom: 1px solid var(--black); position: sticky; top: 0; background: var(--white); }
+td { padding: 4px 8px; border-bottom: 1px dotted rgba(0, 0, 0, .3); white-space: nowrap; transition: background-color 1.4s var(--ease); }
+td.r, th.r { text-align: right; }
+tr.fresh td { background: var(--blue); transition: none; }
+tbody tr:hover td { background: var(--black); color: var(--white); transition: none; }
+.st-fail { font-weight: 600; text-decoration: underline; text-underline-offset: 2px; }
+dl.facts { display: grid; grid-template-columns: max-content 1fr; gap: 4px 16px; margin: 0 0 12px; }
+dl.facts dt { color: var(--ink-3); }
+dl.facts dd { margin: 0; }
+h3 { margin: 12px 0 8px; }
+
+/* About: what DUM-E is, in a few lines, and the one button that starts the replay. */
+.about .body { display: grid; gap: 10px; font-size: 14px; line-height: 19px; }
+.about h2 { margin: 0; font-size: 22px; line-height: 26px; font-weight: 400; }
+.about p { margin: 0; max-width: 46ch; }
+.about ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; max-width: 46ch; }
+.about .row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-top: 4px; }
+.about .note { color: var(--ink-3); font-size: 12px; line-height: 16px; }
+.about a { text-underline-offset: 2px; }
+
+.zoom { position: fixed; border: 1px dotted var(--white); outline: 1px dotted var(--black); pointer-events: none; z-index: 2000; transform-origin: 0 0; }
+.ghost { position: fixed; border: 1px dashed var(--blue); border-radius: 4px; pointer-events: none; z-index: 1500; }
+
+/* CRT power-on: a bright line opens into the picture, a boot log types out, then the screen hands over to the desk. */
+.boot { position: fixed; inset: 0; z-index: 5000; background: var(--black); display: grid; place-items: center; transition: opacity 480ms var(--ease); }
+.boot.off { opacity: 0; pointer-events: none; }
+.boot .tube { position: absolute; inset: 0; background: var(--white); transform-origin: center; animation: tube 760ms var(--ease) both; }
+@keyframes tube {
+  0% { transform: scale(0, .002); opacity: 1; }
+  35% { transform: scale(1, .002); opacity: 1; }
+  70% { transform: scale(1, 1); opacity: .9; }
+  100% { transform: scale(1, 1); opacity: 0; }
+}
+.bootlog { position: relative; margin: 0; width: min(440px, 100% - 32px); color: var(--white); font: 13px/20px var(--display); white-space: pre-wrap; }
+.bootlog::after { content: ""; display: inline-block; width: 8px; height: 14px; margin-left: 2px; vertical-align: -2px; background: var(--blue); animation: blink 1s steps(1) infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+body.booted .win { animation: rise 520ms var(--ease) both; }
+body.booted .win:nth-of-type(2) { animation-delay: 70ms; }
+body.booted .win:nth-of-type(3) { animation-delay: 140ms; }
+body.booted .win:nth-of-type(4) { animation-delay: 210ms; }
+body.booted .win:nth-of-type(5) { animation-delay: 280ms; }
+@keyframes rise { from { opacity: 0; translate: 0 14px; } to { opacity: 1; translate: 0 0; } }
+
+/* Phones and small tablets: no desktop. The windows stack full width, in reading order, and nothing drags. */
+@media (max-width: 900px) {
+  body { overflow: auto; }
+  .icons { display: none; }
+  .desk { position: static; padding: 40px 16px 24px; display: flex; flex-direction: column; gap: 16px; pointer-events: auto; overflow: visible; }
+  .win { position: static !important; transform: none !important; min-width: 0; width: auto !important; height: auto !important; }
+  #win-about { order: -2; }
+  #win-pipeline { order: -1; }
+  .menubar { gap: 10px; white-space: nowrap; }
+  #clock { display: none; }
+  .win[hidden] { display: flex; }
+  .titlebar { cursor: default; }
+  .titlebar .close { visibility: hidden; }
+  .pipe { grid-template-columns: 1fr; gap: 12px; }
+  .stage + .stage::before, .stage + .stage::after, .loop { display: none; }
+  .stage, .tray { min-height: 0; }
+  .tray:empty { display: none; }
+  .menubar .hide-sm { display: none; }
+  .toolbar .hint { margin-left: 0; flex-basis: 100%; }
+  .desk-only { display: none; }
+  .win { scroll-margin-top: 32px; }
+  .status { flex-wrap: wrap; gap: 0 12px; padding: 2px 8px; }
+  #win-ledger .body { overflow-x: auto; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+</style>
+  <script type="module" crossorigin src="/assets/dume-BuZEE0lV.js"></script>
+  <link rel="modulepreload" crossorigin href="/assets/modulepreload-polyfill-B5Qt9EMX.js">
+</head>
+<body>
+<canvas id="field" aria-hidden="true"></canvas>
+<header class="menubar">
+  <span class="brand"><span class="mark" aria-hidden="true"></span>DUM-E</span>
+  <button class="menu hide-sm" data-open="pipeline">Pipeline</button>
+  <button class="menu hide-sm" data-open="sessions">Sessions</button>
+  <button class="menu hide-sm" data-open="ledger">Ledger</button>
+  <button class="menu hide-sm" data-open="about">About</button>
+  <span class="spacer"></span>
+  <span class="item hide-sm" title="On the real desk this lamp shows the live feed from the harness files. This page is a frozen copy."><span class="lamp ok"></span><span id="txt-snap">Snapshot</span></span>
+  <span class="item num" id="clock"></span>
+  <a class="menu" href="/">manasjha.online</a>
+</header>
+
+<nav class="icons" aria-label="Windows">
+  <button class="icon" data-win="pipeline"><span class="glyph"></span><span class="label">Pipeline</span></button>
+  <button class="icon" data-win="sessions"><span class="glyph"></span><span class="label">Sessions</span></button>
+  <button class="icon" data-win="ledger"><span class="glyph"></span><span class="label">Ledger</span></button>
+  <button class="icon" data-win="card"><span class="glyph"></span><span class="label">Card</span></button>
+  <button class="icon" data-win="about"><span class="glyph"></span><span class="label">About</span></button>
+</nav>
+
+<main class="desk" id="desk">
+  <section class="win" id="win-pipeline" style="width:860px" aria-label="Pipeline">
+    <div class="titlebar"><button class="close" aria-label="Close Pipeline"></button><span class="title">Pipeline</span><span class="grip"></span></div>
+    <div class="toolbar">
+      <button class="btn" id="replay" aria-pressed="false">Replay</button>
+      <select class="btn" id="replay-card" aria-label="Card to replay"></select>
+      <span class="hint" id="replay-hint" role="status" aria-live="polite">Replay walks one card's ledger rows in order</span>
+    </div>
+    <div class="body">
+      <div class="pipe" id="pipe"></div>
+    </div>
+    <div class="status"><span id="pipe-count"></span><span class="right num" id="pipe-time"></span></div>
+  </section>
+
+  <section class="win" id="win-sessions" style="width:540px" aria-label="Sessions">
+    <div class="titlebar"><button class="close" aria-label="Close Sessions"></button><span class="title">Sessions</span><span class="grip"></span></div>
+    <div class="body tree">
+      <svg id="tree" viewBox="0 0 520 268" role="img" aria-label="Session tree: you talk to the coordinator, which hands work to the planner, builder, verifier, learner and researcher"></svg>
+      <div class="legend">
+        <span><i class="k-move"></i>Handoff moving</span>
+        <span><i class="k-work"></i>Working in the replay</span>
+      </div>
+    </div>
+    <div class="status"><span id="tree-count"></span><span class="right" id="tree-last"></span></div>
+  </section>
+
+  <section class="win" id="win-ledger" style="width:560px;height:300px" aria-label="Ledger">
+    <div class="titlebar"><button class="close" aria-label="Close Ledger"></button><span class="title">Ledger</span><span class="grip"></span></div>
+    <div class="body well" style="margin:8px;padding:0">
+      <table>
+        <thead><tr><th>Time</th><th>Card</th><th>Stage</th><th>Session</th><th>Model</th><th class="r">Try</th><th>Result</th><th class="r">Tokens</th><th class="r">Min</th></tr></thead>
+        <tbody id="ledger-rows"></tbody>
+      </table>
+    </div>
+    <div class="status"><span id="ledger-count"></span></div>
+  </section>
+
+  <section class="win" id="win-card" style="width:300px" aria-label="Card">
+    <div class="titlebar"><button class="close" aria-label="Close Card"></button><span class="title" id="card-title">Card</span><span class="grip"></span></div>
+    <div class="body" id="card-body"><p class="empty">Pick a card in the pipeline</p></div>
+    <div class="status"><span>Caps: 3 tries, 2 stalls, 2 replans</span></div>
+  </section>
+
+  <section class="win about" id="win-about" style="width:400px" aria-label="About DUM-E">
+    <div class="titlebar"><button class="close" aria-label="Close About"></button><span class="title">About</span><span class="grip"></span></div>
+    <div class="body">
+      <h2>DUM-E</h2>
+      <p>My Claude Code agent harness. Six agent sessions take a card from a frozen spec to checked code:</p>
+      <ol>
+        <li>The coordinator freezes the spec and splits it into sub-tasks.</li>
+        <li>The builder works each one, with at most 3 tries.</li>
+        <li>A separate verifier checks the result against the spec.</li>
+        <li>A miss goes back for a new plan, not a blind retry. After 2 replans, a person decides.</li>
+        <li>The learner turns every miss into a lesson for next time.</li>
+      </ol>
+      <p>This is the desk I watch it on. Press Replay to watch card SH-2 fail verification twice, get a new plan, then pass.</p>
+      <div class="row">
+        <button class="btn go" id="about-replay">Replay SH-2</button>
+        <a href="/">Back to manasjha.online</a>
+      </div>
+      <p class="note">A frozen copy of the desk from 15 Nov 2026. It shows what the harness does, not how it's built.<span class="desk-only"> Drag windows by their title bars; double-click an icon to reopen one.</span></p>
+      <p class="note">© 2026 Manas Jha. All rights reserved. DUM-E, this page and its code may not be copied, reused, adapted or reverse engineered without my written, signed permission.</p>
+    </div>
+  </section>
+</main>
+</body>
+</html>
