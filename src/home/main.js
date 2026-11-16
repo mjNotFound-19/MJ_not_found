@@ -475,7 +475,7 @@
       details.replaceWith(full);
       const title = $("h3", copy);
       title.id = "sheet-title";
-      const column = $(".f1-col", copy);
+      const column = $(".f1-col, .proj-col", copy);
       body.replaceChildren(...(column ? column.childNodes : copy.childNodes));
     };
     const open = (card) => {
@@ -778,7 +778,7 @@
     const COMMANDS = {
       help: () => "work · break · measure · experience · skills <word> · f1 · email · resume · bucket · theme · decode · whoami",
       whoami: () => "Manas Jha. AI Engineer at DevHawk AI, founder of a stealth agent OS, Purdue AI 2026, Atlanta.",
-      work: () => go("build", "→ BUILD: five projects. Open any case file."),
+      work: () => go("build", "→ BUILD: six projects. Open any case file."),
       build: () => COMMANDS.work(),
       projects: () => COMMANDS.work(),
       break: () => go("break", "→ BREAK: benchmarks, leakage tests, security."),

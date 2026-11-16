@@ -1,0 +1,4 @@
+# The DUM-E desk demo's readable source lives in the private dum-e repo (workflows/super-harness/site-demo) and is
+# copied in only to build. Only the built, minified output is published.
+/dum-e/
+/src/dum-e/

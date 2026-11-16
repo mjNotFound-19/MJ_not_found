@@ -14,7 +14,7 @@
 <meta property="og:url" content="https://manasjha.online/">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter+Tight:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter+Tight:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&family=Silkscreen&display=swap" rel="stylesheet">
 <script src="/theme-init.js"></script>
 <style>
   /* ---------- Tokens ---------- */
@@ -204,7 +204,7 @@
   /* f1.h showpiece: live forecast + a start-lights reaction test */
   .f1 { --c: #ff8000; display: grid; gap: 24px; background: #0b0c0f; color: #eef1f5; border-color: rgba(238, 241, 245, 0.14); --muted: #9aa3b0; --line: rgba(238, 241, 245, 0.14); --line-strong: rgba(238, 241, 245, 0.34); --surface-2: #1a1c22; --ink: #eef1f5; --bg: #0b0c0f; }
   .f1:hover { transform: none; }
-  .f1-col { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+  .f1-col, .proj-col { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
   #f1-odds { display: grid; gap: 8px; }
   #f1-odds li { display: grid; grid-template-columns: 44px 1fr 52px; align-items: center; gap: 10px; font: 500 0.8rem var(--mono); }
   #f1-odds .bar { height: 8px; border-radius: 999px; background: rgba(238, 241, 245, 0.1); overflow: hidden; }
@@ -220,6 +220,17 @@
   #lights-btn[data-phase="wait"] { background: #2a2d35; color: #eef1f5; }
   #lights-btn[data-phase="go"] { background: #48d7a4; color: #04130d; }
   @media (min-width: 860px) { .f1 { grid-template-columns: 1.15fr 0.85fr; gap: 44px; } }
+
+  /* DUM-E: drawn in the harness desk's own 1-bit look (black, white, one blue) with its story video beside it. */
+  .dume { --c: #3cc4ff; display: grid; gap: 24px; background: #000; color: #fff; border-color: rgba(255, 255, 255, 0.28); --muted: #b9c0c9; --line: rgba(255, 255, 255, 0.2); --line-strong: rgba(255, 255, 255, 0.45); --surface-2: #16181c; --ink: #fff; --bg: #000; }
+  .dume:hover { transform: none; }
+  .dume h3 { font: 400 clamp(1.6rem, 3vw, 2.2rem)/1 "Silkscreen", var(--mono); letter-spacing: 0; }
+  .dume .proj-tag i { border-radius: 0; }
+  .dume-video { justify-self: center; width: min(100%, 280px); aspect-ratio: 9 / 16; border: 1px solid rgba(255, 255, 255, 0.5); box-shadow: 4px 4px 0 rgba(255, 255, 255, 0.22); background: #000; }
+  .dume-video video { display: block; width: 100%; height: 100%; object-fit: cover; }
+  .dume .btn-desk { align-self: start; border-radius: 4px; border-color: #fff; background: #fff; color: #000; box-shadow: 3px 3px 0 #3cc4ff; }
+  .dume .btn-desk:hover { background: #3cc4ff; border-color: #3cc4ff; color: #04121b; }
+  @media (min-width: 860px) { .dume { grid-column: 1 / -1; grid-template-columns: 1.3fr 0.7fr; gap: 44px; align-items: center; } }
 
   /* Case file: a project card grows into a full sheet. */
   dialog { padding: 0; border: 0; background: none; color: var(--ink); max-width: none; max-height: none; }
@@ -467,6 +478,35 @@
             <button type="button" id="lights-btn" data-phase="idle">Start the lights</button>
             <a class="link" href="/f1/" style="justify-self:center">Skip the test, open f1.h</a>
           </div>
+        </article>
+
+        <article class="card proj dume" id="dume" data-name="DUM-E" data-reveal>
+          <div class="proj-col">
+            <p class="proj-tag mono"><i aria-hidden="true"></i>Agent harness · personal project</p>
+            <h3>DUM-E</h3>
+            <p style="color:var(--muted)">My Claude Code agent harness: six agent sessions take a card from a frozen spec through a capped build-and-repair loop to an independent verifier. A miss means a new plan instead of a blind retry, and every miss becomes a lesson.</p>
+            <dl class="metrics">
+              <div><dd>6</dd><dt>agent sessions</dt></div>
+              <div><dd>3</dd><dt>tries per sub-task</dt></div>
+              <div><dd>2</dd><dt>replans, then a person</dt></div>
+            </dl>
+            <a class="btn btn-desk" href="/dum-e/">Open the desk</a>
+            <ul class="chips" data-stack aria-label="Built with"><li>Claude Code</li><li>Multi-agent</li><li>Agent pipelines</li><li>Lifecycle hooks</li><li>Node.js</li><li>Canvas 2D</li></ul>
+            <details class="more">
+              <summary>Open case file</summary>
+              <div class="proj-full">
+                <ul class="bullets">
+                  <li>A coordinator freezes the spec, a builder works each sub-task with at most 3 tries, and a separate verifier checks the result against the spec.</li>
+                  <li>A failed check goes back for a new plan; after 2 replans a person decides. Every run is written to a ledger with its model, time and token cost.</li>
+                  <li>The desk shows it all as a 1-bit workstation: cards moving through the pipeline, handoffs travelling between sessions, and the ledger filling in.</li>
+                </ul>
+                <div class="proj-links"><a class="link" href="/dum-e/">Open the DUM-E desk and replay a card</a></div>
+              </div>
+            </details>
+          </div>
+          <figure class="dume-video">
+            <video src="/src/assets/dum-e/brag.mp4" poster="/src/assets/dum-e/brag.jpg" width="1080" height="1920" controls muted playsinline preload="none" aria-label="14-second video: DUM-E's desk takes a card from spec to a verified pass"></video>
+          </figure>
         </article>
 
         <article class="card proj" style="--c:#00aeef" data-name="Local-first OS for AI agents" data-reveal>

@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { defineConfig } from "vite";
@@ -39,11 +40,13 @@ export default defineConfig({
   base: "/",
   build: {
     outDir: "dist",
-    // Two pages: the portfolio at / and the bucket list at /bucket-list/.
+    // Pages: the portfolio at /, the bucket list at /bucket-list/ and the DUM-E desk demo at /dum-e/. The demo's
+    // source is private and copied in only to build (see .gitignore), so a checkout without it builds the other two.
     rollupOptions: {
       input: {
         main: resolve(root, "index.html"),
         bucket: resolve(root, "bucket-list/index.html"),
+        ...(existsSync(resolve(root, "dum-e/index.html")) ? { dume: resolve(root, "dum-e/index.html") } : {}),
       },
     },
   },
