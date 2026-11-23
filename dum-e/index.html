@@ -44,7 +44,9 @@
   --ease: cubic-bezier(.22, 1, .36, 1); /* the same curve as manasjha.online */
   color-scheme: light;
 }
-* { box-sizing: border-box; }
+/* Pixelify Sans joins "fi" and "fl" into one glyph, which makes words like "workflow" read wrongly.
+   !important because every later `font:` shorthand would otherwise reset ligatures to normal. */
+* { box-sizing: border-box; font-variant-ligatures: none !important; font-feature-settings: "liga" 0, "clig" 0 !important; }
 html, body { margin: 0; height: 100%; }
 body {
   background: var(--black) radial-gradient(rgba(255, 255, 255, .16) 1px, transparent 1px) 0 0 / 12px 12px;
