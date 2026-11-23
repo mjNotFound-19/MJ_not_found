@@ -119,8 +119,15 @@ a { color: inherit; }
 .titlebar .title { margin: 0 auto; padding: 0 8px; background: var(--white); white-space: nowrap; }
 .win:not(.focused) .titlebar .title { color: var(--ink-3); }
 .titlebar .close { width: 12px; height: 12px; padding: 0; background: var(--white); border: 1px solid var(--black); position: relative; z-index: 1; }
+/* A pixel cross, drawn as a mask so it can flip colour when the button is pressed. */
+.titlebar .close::before {
+  content: ""; position: absolute; inset: 1px; background: var(--black);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8' shape-rendering='crispEdges'%3E%3Cpath d='M0 0h1v1H0zM7 0h1v1H7zM1 1h1v1H1zM6 1h1v1H6zM2 2h1v1H2zM5 2h1v1H5zM3 3h2v2H3zM2 5h1v1H2zM5 5h1v1H5zM1 6h1v1H1zM6 6h1v1H6zM0 7h1v1H0zM7 7h1v1H7z'/%3E%3C/svg%3E") center / 8px 8px no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8' shape-rendering='crispEdges'%3E%3Cpath d='M0 0h1v1H0zM7 0h1v1H7zM1 1h1v1H1zM6 1h1v1H6zM2 2h1v1H2zM5 2h1v1H5zM3 3h2v2H3zM2 5h1v1H2zM5 5h1v1H5zM1 6h1v1H1zM6 6h1v1H6zM0 7h1v1H0zM7 7h1v1H7z'/%3E%3C/svg%3E") center / 8px 8px no-repeat;
+}
 .titlebar .close:hover { background: var(--dither-50); }
 .titlebar .close:active { background: var(--black); }
+.titlebar .close:active::before { background: var(--white); }
 .titlebar .close:focus-visible { outline: 1px dotted var(--black); outline-offset: 2px; }
 .titlebar .grip { width: 12px; }
 .toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 8px; border-bottom: 1px solid var(--black); }
@@ -348,7 +355,7 @@ body.booted .win:nth-of-type(5) { animation-delay: 280ms; }
 
 <main class="desk" id="desk">
   <section class="win" id="win-pipeline" style="width:860px" aria-label="Pipeline">
-    <div class="titlebar"><button class="close" aria-label="Close Pipeline"></button><span class="title">Pipeline</span><span class="grip"></span></div>
+    <div class="titlebar"><span class="grip"></span><span class="title">Pipeline</span><button class="close" aria-label="Close Pipeline"></button></div>
     <div class="toolbar">
       <button class="btn" id="replay" aria-pressed="false">Replay</button>
       <select class="btn" id="replay-card" aria-label="Card to replay"></select>
@@ -361,7 +368,7 @@ body.booted .win:nth-of-type(5) { animation-delay: 280ms; }
   </section>
 
   <section class="win" id="win-workflow" style="width:960px" aria-label="Agent workflow">
-    <div class="titlebar"><button class="close" aria-label="Close Agent workflow"></button><span class="title">Agent workflow</span><span class="grip"></span></div>
+    <div class="titlebar"><span class="grip"></span><span class="title">Agent workflow</span><button class="close" aria-label="Close Agent workflow"></button></div>
     <div class="body">
       <div class="flow" id="flow" role="list" aria-label="The steps a card takes, in order, and which agent does each one"></div>
       <div class="flow-detail" id="flow-detail" aria-live="polite"></div>
@@ -376,7 +383,7 @@ body.booted .win:nth-of-type(5) { animation-delay: 280ms; }
   </section>
 
   <section class="win" id="win-ledger" style="width:560px;height:300px" aria-label="Ledger">
-    <div class="titlebar"><button class="close" aria-label="Close Ledger"></button><span class="title">Ledger</span><span class="grip"></span></div>
+    <div class="titlebar"><span class="grip"></span><span class="title">Ledger</span><button class="close" aria-label="Close Ledger"></button></div>
     <div class="body well" style="margin:8px;padding:0">
       <table>
         <thead><tr><th>Time</th><th>Card</th><th>Stage</th><th>Session</th><th>Model</th><th class="r">Try</th><th>Result</th><th class="r">Tokens</th><th class="r">Min</th></tr></thead>
@@ -387,13 +394,13 @@ body.booted .win:nth-of-type(5) { animation-delay: 280ms; }
   </section>
 
   <section class="win" id="win-card" style="width:300px" aria-label="Card">
-    <div class="titlebar"><button class="close" aria-label="Close Card"></button><span class="title" id="card-title">Card</span><span class="grip"></span></div>
+    <div class="titlebar"><span class="grip"></span><span class="title" id="card-title">Card</span><button class="close" aria-label="Close Card"></button></div>
     <div class="body" id="card-body"><p class="empty">Pick a card in the pipeline</p></div>
     <div class="status"><span>Caps: 3 tries, 2 stalls, 2 replans</span></div>
   </section>
 
   <section class="win about" id="win-about" style="width:400px" aria-label="About DUM-E">
-    <div class="titlebar"><button class="close" aria-label="Close About"></button><span class="title">About</span><span class="grip"></span></div>
+    <div class="titlebar"><span class="grip"></span><span class="title">About</span><button class="close" aria-label="Close About"></button></div>
     <div class="body">
       <h2>DUM-E</h2>
       <p>My Claude Code agent harness. Six agent sessions take a card from a frozen spec to checked code:</p>
