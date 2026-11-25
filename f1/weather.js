@@ -2,7 +2,25 @@
 // current conditions + the next hours (Open-Meteo). Plain image and JSON requests only: no third-party
 // scripts, cookies or trackers. getWeather() also classifies the situation (dry / showers nearby / wet) for
 // the strategy notes.
-import { flow, origin, verify, coverAhead } from "./nowcast.js?v=6b7cdf2f70";
+import * as nowcastMain from "./nowcast.js?v=9e5d7c6fd1";
+import { origin, coverAhead } from "./nowcast.js?v=9e5d7c6fd1";
+
+// the heavy nowcast steps (motion search, motion field, hindcast verification) run in a worker; where workers are
+// unavailable they run here as before
+let worker, seq = 0;
+const waiting = new Map();
+function offThread(op, ...args) {
+  if (worker === undefined) {
+    try {
+      worker = new Worker(new URL("./nowcast-worker.js?v=9e5d7c6fd1", import.meta.url), { type: "module" });
+      worker.onmessage = ({ data: { id, ok, v, e } }) => { const p = waiting.get(id); waiting.delete(id); ok ? p?.res(v) : p?.rej(new Error(e)); };
+      worker.onerror = () => { worker = null; waiting.forEach((p, id) => { waiting.delete(id); p.retry(); }); };
+    } catch { worker = null; }
+  }
+  if (!worker) return Promise.resolve().then(() => nowcastMain[op](...args));
+  return new Promise((res, rej) => { const id = ++seq; waiting.set(id, { res, rej, retry: () => { try { res(nowcastMain[op](...args)); } catch (e) { rej(e); } } }); worker.postMessage({ id, op, args }); });
+}
+const flow = (grids) => offThread("flow", grids), verify = (grids, lead) => offThread("verify", grids, lead);
 
 const RV = "https://api.rainviewer.com/public/weather-maps.json";
 const BASE = (z, x, y) => `https://tile.openstreetmap.org/${z}/${x}/${y}.png`;
@@ -59,7 +77,7 @@ export function getWeather({ lat, lon }) {
       if (last) {
         try { echo = echoStats(last, lat); } catch {}
         try {                                     // extrapolation nowcast for the circuit: +10 ... +60 minutes
-          const F = flow(ps.map((x) => x.m)), r5 = 5 / (kmPerPx(lat, ZR) * 2);
+          const F = await flow(ps.map((x) => x.m)), r5 = 5 / (kmPerPx(lat, ZR) * 2);
           for (let m = 1; m <= LEADS * 10; m++) { const cov = coverAhead(last.m, F, last.cx, last.cy, Math.max(1.5, r5), m / 10); nowcast.push({ t: last.time + m * 60000, lead: m, cover: cov, wet: cov > 0.05 }); }
         } catch {}
       }
@@ -180,22 +198,11 @@ function forecastPatch(p, F, k) {
 // How the rain moved from frame a to frame b: the shift (in normalised Mercator units) that best lines a up
 // with b, found by comparing the two echo grids over shifts of up to +-16 km. [0, 0] when there is too little
 // rain to track or no shift is clearly better than none.
-function motion(a, b) {
+async function motion(a, b) {                   // the echoes' overall shift between two scans, in map units
   if (!a?.m || !b?.m) return [0, 0];
-  const A = a.m, B = b.m, N = 128, R = 6;
-  let on = 0; for (let i = 0; i < A.length; i++) on += A[i] > 60;
-  if (on < 40) return [0, 0];
-  const cost = (dx, dy) => { let c = 0; for (let y = R; y < N - R; y++) for (let x = R; x < N - R; x++) c += Math.abs(A[y * N + x] - B[(y + dy) * N + x + dx]); return c; };
-  let best = [0, 0], bc = cost(0, 0); const c0 = bc, grid = {};
-  for (let dy = -R; dy <= R; dy++) for (let dx = -R; dx <= R; dx++) { const c = dx || dy ? cost(dx, dy) : c0; grid[`${dx},${dy}`] = c; if (c < bc) { bc = c; best = [dx, dy]; } }
-  if (bc > c0 * 0.93) return [0, 0];             // not clearly better than no movement
-  const sub = (i) => {                           // parabola through the neighbours for a sub-pixel shift
-    const d = i ? [0, 1] : [1, 0], l = grid[`${best[0] - d[0]},${best[1] - d[1]}`], r = grid[`${best[0] + d[0]},${best[1] + d[1]}`];
-    if (l == null || r == null) return best[i];
-    const den = l - 2 * bc + r; return best[i] + (den > 0 ? clamp((l - r) / (2 * den), -0.5, 0.5) : 0);
-  };
+  const [sx, sy] = await offThread("globalShift", a.m, b.m);
   const px = 2 / (256 * 2 ** ZR);                // one grid step = 2 radar pixels
-  return [sub(0) * px, sub(1) * px];
+  return [sx * px, sy * px];
 }
 
 export async function mountRadar(host, { lat, lon, name, outline, onUpdate }) {
@@ -403,7 +410,10 @@ export async function mountRadar(host, { lat, lon, name, outline, onUpdate }) {
     const atEnd = false, shift = frames.length ? frames.findIndex((f) => have.has(f.time)) : 0;
     frames = [...have.values()].sort((a, b) => a.time - b.time);
     if (!frames.length) { stamp.textContent = "Radar unavailable"; return; }
-    for (let i = 0; i < frames.length - 1; i++) if (!frames[i].v || frames[i].vTo !== frames[i + 1].time) { frames[i].v = motion(frames[i], frames[i + 1]); frames[i].vTo = frames[i + 1].time; }
+    const todo = []; for (let i = 0; i < frames.length - 1; i++) if (!frames[i].v || frames[i].vTo !== frames[i + 1].time) todo.push(i);
+    const moved = await Promise.all(todo.map((i) => motion(frames[i], frames[i + 1]).catch(() => [0, 0])));
+    if (!alive) return;
+    todo.forEach((i, k) => { frames[i].v = moved[k]; frames[i].vTo = frames[i + 1].time; });
     scrub.max = String(end());
     if (first) { first = false; pos = nowPos(); hold = 2600; setPlay(!reduced); }       // open on "now", then play the loop
     else if (atEnd) { pos = clamp(pos - Math.max(0, shift), 0, end()); }
@@ -413,11 +423,14 @@ export async function mountRadar(host, { lat, lon, name, outline, onUpdate }) {
     const lastP = frames[frames.length - 1], grids = frames.map((f) => f.m);
     if (lastP?.raw && frames.length >= 2 && lastP.time !== builtFor) {
       builtFor = lastP.time;
-      const F = flow(grids.slice(-4)), next = [];
+      let F; try { F = await flow(grids.slice(-4)); } catch { return; }
+      if (!alive || builtFor !== lastP.time) return;
+      const next = [];
       for (let k = 1; k <= LEADS; k++) { await new Promise((r) => setTimeout(r, 0)); if (!alive || builtFor !== lastP.time) return; next.push(forecastPatch(lastP, F, k)); }
       fc = next; scrub.max = String(end());
       await new Promise((r) => setTimeout(r, 0));
-      try { skill = { m30: verify(grids, 3), m60: verify(grids, 6) }; } catch { skill = null; }
+      try { const [m30, m60] = await Promise.all([verify(grids, 3), verify(grids, 6)]); skill = { m30, m60 }; } catch { skill = null; }
+      if (!alive) return;
       need(); onUpdate?.(w, { skill });
     }
   }

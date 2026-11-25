@@ -99,6 +99,24 @@ export function verify(grids, lead) {
   if (!cases || h + m < 60) return null;
   return { lead, cases, csi: h / (h + m + f || 1), persistence: ph / (ph + pm + pf || 1) };
 }
+// Overall shift of the echoes from grid A to grid B, in cells, sub-cell by a parabola through the neighbours of the
+// best whole-cell shift; [0, 0] with too little rain or no shift clearly better than none.
+export function globalShift(A, B) {
+  if (!A || !B) return [0, 0];
+  const R = 6;
+  let on = 0; for (let i = 0; i < A.length; i++) on += A[i] > ECHO;
+  if (on < 40) return [0, 0];
+  const cost = (dx, dy) => { let c = 0; for (let y = R; y < N - R; y++) for (let x = R; x < N - R; x++) c += Math.abs(A[y * N + x] - B[(y + dy) * N + x + dx]); return c; };
+  let best = [0, 0], bc = cost(0, 0); const c0 = bc, grid = {};
+  for (let dy = -R; dy <= R; dy++) for (let dx = -R; dx <= R; dx++) { const c = dx || dy ? cost(dx, dy) : c0; grid[`${dx},${dy}`] = c; if (c < bc) { bc = c; best = [dx, dy]; } }
+  if (bc > c0 * 0.93) return [0, 0];
+  const sub = (i) => {
+    const d = i ? [0, 1] : [1, 0], l = grid[`${best[0] - d[0]},${best[1] - d[1]}`], r = grid[`${best[0] + d[0]},${best[1] + d[1]}`];
+    if (l == null || r == null) return best[i];
+    const den = l - 2 * bc + r; return best[i] + (den > 0 ? Math.max(-0.5, Math.min(0.5, (l - r) / (2 * den))) : 0);
+  };
+  return [sub(0), sub(1)];
+}
 // Rain at a point of the grid: share of cells with echo within `r` cells.
 export function coverAt(grid, cx, cy, r) {
   let on = 0, n = 0;

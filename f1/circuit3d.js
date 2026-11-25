@@ -144,9 +144,15 @@ export async function mount(host, track, { accent = "#e10600", onSpeed } = {}) {
   const end = () => { dragging = false; host.classList.remove("grabbing"); };
   cv.addEventListener("pointerup", end); cv.addEventListener("pointercancel", end);
 
-  let aspect = 1;
+  // size and on-screen position are read only after a resize or a scroll, never every frame: reading them while
+  // the page has pending style changes forces a full layout on each frame
+  let aspect = 1, hostW = 1, hostH = 1, prog = 0, measured = false;
+  const measure = () => { const r = host.getBoundingClientRect(); prog = Math.max(0, Math.min(1, 1 - (r.top + r.height / 2) / (innerHeight + r.height / 2))); measured = true; };
+  const onScroll = () => { measured = false; };
+  addEventListener("scroll", onScroll, { passive: true });
   const resize = () => {
     const w = host.clientWidth, h = host.clientHeight;
+    hostW = w || 1; hostH = h || 1; measured = false;
     renderer.setSize(w, h, false); aspect = w / h;
     camera.aspect = aspect;
     // portrait: lift the circuit into the upper part so the HUD below doesn't sit on it
@@ -161,7 +167,7 @@ export async function mount(host, track, { accent = "#e10600", onSpeed } = {}) {
     const dt = Math.min(0.05, (now - t0) / 1000); t0 = now;
     if (!dragging) { vel *= 0.94; az += vel + (REDUCED ? 0 : dt * 0.06); }
     // scroll progress through the viewport tilts the camera from overhead to low and dramatic
-    const r = host.getBoundingClientRect(), prog = Math.max(0, Math.min(1, 1 - (r.top + r.height / 2) / (innerHeight + r.height / 2)));
+    if (!measured) measure();
     const target = 1.05 - prog * 0.55 + tiltDrag;
     tilt += (target - tilt) * 0.08;
     // fit the circuit at any rotation: its half-diagonal is ~0.6 units, plus perspective margin
@@ -192,7 +198,7 @@ export async function mount(host, track, { accent = "#e10600", onSpeed } = {}) {
     renderer.render(scene, camera);
 
     // project corner labels; fade the ones facing away / far
-    const hw = host.clientWidth / 2, hh = host.clientHeight / 2;
+    const hw = hostW / 2, hh = hostH / 2;
     labels.forEach(({ el, p }) => {
       v3.copy(p).applyMatrix4(root.matrixWorld).project(camera);
       const depth = camera.position.distanceTo(p);
@@ -214,7 +220,7 @@ export async function mount(host, track, { accent = "#e10600", onSpeed } = {}) {
   frame(performance.now());
 
   return () => {   // dispose when the view re-renders
-    stop(); io.disconnect(); ro.disconnect(); document.removeEventListener("visibilitychange", onVis);
+    stop(); io.disconnect(); ro.disconnect(); document.removeEventListener("visibilitychange", onVis); removeEventListener("scroll", onScroll);
     scene.traverse((o) => { o.geometry?.dispose(); o.material?.map?.dispose(); o.material?.dispose(); });
     renderer.dispose(); renderer.forceContextLoss?.();
   };

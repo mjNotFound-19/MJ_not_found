@@ -178,7 +178,7 @@ export async function mount(host, { manifestUrl, teams, start = 0, auto = true, 
     const entry = teamEntry(i);
     const slug = entry.slug;
     if (cache.has(slug)) { lru.splice(lru.indexOf(slug), 1); lru.push(slug); return cache.get(slug); }
-    const p = loader.loadAsync(base + entry.files[variant].url).then((g) => prepare(g, entry, i));
+    const p = loader.loadAsync(base + entry.files[variant].url).then((g) => prepare(g, entry, i)).then(warm);
     cache.set(slug, p); lru.push(slug);
     p.catch(() => { cache.delete(slug); lru.splice(lru.indexOf(slug), 1); });
     while (lru.length > CACHE) {
@@ -189,6 +189,17 @@ export async function mount(host, { manifestUrl, teams, start = 0, auto = true, 
       cache.delete(old);
     }
     return p;
+  }
+
+  // before a car is first drawn: compile its shaders without blocking (parallel compile) and upload its textures one
+  // per frame. Done in the first draw instead, all of it landed in one task: a freeze of a second or more mid-scroll.
+  async function warm(car) {
+    const frame = () => new Promise((r) => requestAnimationFrame(() => r()));
+    try { await renderer.compileAsync(car.root, camera, scene); } catch { /* older drivers: compiled on first draw */ }
+    const maps = new Set();
+    car.root.traverse((o) => [].concat(o.material || []).forEach((m) => Object.values(m).forEach((v) => v?.isTexture && maps.add(v))));
+    for (const t of maps) { renderer.initTexture(t); await frame(); }
+    return car;
   }
 
   function prepare(gltf, entry, i) {
@@ -413,6 +424,8 @@ export async function mount(host, { manifestUrl, teams, start = 0, auto = true, 
     if (!cur) {            // first car
       cur = B; curIdx = i; setVisible(B, true); poseAt(B, 0, "solo"); paintBackdrop(teams[i].color);
       restCloud = new Float32Array(carPoints(B, [])); shadowDirty = true; onChange?.(i);
+      // first car: frame it at once (a fixed-view car has no loop of its own to ease the camera in)
+      cancelAnimationFrame(raf); raf = 0; snap = true; frame(performance.now()); snap = false; kick();
       prefetch();
       return;
     }
@@ -543,7 +556,9 @@ export async function mount(host, { manifestUrl, teams, start = 0, auto = true, 
   }
   function kick(ms = 450) { until = performance.now() + ms; if (!raf) { last = performance.now(); raf = requestAnimationFrame(frame); } }
   function startRaf() { if (!raf) { last = performance.now(); raf = requestAnimationFrame(frame); } }
-  const startLoop = () => { if (running) return; running = !REDUCED; startRaf(); };
+  // a fixed-view car (the hero) is drawn only when something changes: a drag, a resize, a car arriving. Redrawing it
+  // 60 times a second for a gentle sway was the largest single cost on the page.
+  const startLoop = () => { if (running) return; running = !REDUCED && !view; startRaf(); };
   const stopLoop = () => { running = false; };
   let inView = false;
   const io = new IntersectionObserver(([e]) => { inView = e.isIntersecting; inView && !document.hidden ? startLoop() : stopLoop(); }, { threshold: 0 });
